@@ -101,7 +101,7 @@ if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set preference for using the local CUDA 
     
     julia --project=$JULIA_PREFDIR -e 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)'
     if [ -n "${JUHPC_CUDA_RUNTIME_VERSION}" ]; then
-        julia --project=$JULIA_PREFDIR -e 'using Preferences; v=VersionNumber(ENV["JUHPC_CUDA_RUNTIME_VERSION"]); set_preferences!("CUDA_Runtime_jll", "version"=> "$(v.major).$(v.minor)")'
+        julia --project=$JULIA_PREFDIR -e 'using Preferences; set_preferences!("CUDA_Runtime_jll", "version"=>join(split(ENV["JUHPC_CUDA_RUNTIME_VERSION"],".")[1:2],"."))'
     fi
 fi
 
@@ -117,7 +117,7 @@ if [ -n "${JUHPC_ROCM_HOME}" ]; then export ROCM_PATH=$JUHPC_ROCM_HOME; fi
 julia --project=$JULIA_PREFDIR -e 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])'
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set  preference for using the local CUDA runtime in a more stable way (in case the previous would not be valid anymore)
-    julia --project=$JULIA_PREFDIR -e 'using CUDA; CUDA.set_runtime_version!((VersionNumber(ENV[key]) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)'
+    julia --project=$JULIA_PREFDIR -e 'using CUDA; CUDA.set_runtime_version!((VersionNumber(join(split(ENV[key],".")[1:2],".")) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)'
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime in a more stable way (in case the previous would not be valid anymore)
@@ -151,8 +151,8 @@ julia -e '
 println("""#!/bin/bash
 
 info() {
-    local message="$1"
-    echo -e "$JUHPC $message" >&2
+    local message="\$1"
+    echo -e "$(ENV["JUHPC"]) \$message" >&2
 }
 
 if [ ! -f $(ENV["JULIAUP_BINDIR"])/juliaup ]; then
@@ -181,6 +181,11 @@ export JULIA_DEPOT=$JULIAUP_INSTALLDIR/depot
 export ACTIVATE_SCRIPT=$JUHPC_SETUP_INSTALLDIR/activate
 
 julia -e 'println("""
+info() {
+    local message="\$1"
+    echo -e "$(ENV["JUHPC"]) \$message" >&2
+}
+info "activating HPC setup for juliaup, julia and HPC key packages requiring system libraries..."
 export PATH=$(ENV["JULIAUP_WRAPPER_BINDIR"]):$(ENV["JULIAUP_BINDIR"]):\$PATH # The wrapper must be before the juliaup bindir
 export JULIAUP_DEPOT_PATH=$(ENV["JULIAUP_DEPOT"])
 export JULIA_DEPOT_PATH=$(ENV["JULIA_DEPOT"])
