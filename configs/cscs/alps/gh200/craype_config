@@ -27,9 +27,11 @@ export JUHPC_ADIOS2_HOME=                                     # Used for ADIOS2.
 
 
 # Call JUHPC
+git clone https://github.com/omlins/JUHPC
+JUHPC=./JUHPC/src/juhpc
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/${HOSTNAME%%-*}/juhpc_setup   # HPC setup installation environment variables must be expanded during installation.
 JULIAUP_INSTALLDIR="\$SCRATCH/\${HOSTNAME%%-*}/juliaup"       # User environment variables SCRATCH and HOSTNAME must not be expanded during uenv build, but during usage. Separate installation by HOSTNAME is required, because different hosts with different architectures can share the same file system (e.g., daint and eiger on ALPS).
-bash -l ./juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR   # NOTE: The juhpc script must be in the current directory.
+bash -l $JUHPC $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
 
 
 # Activate the HPC setup environment variables
