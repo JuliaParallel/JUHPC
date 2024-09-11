@@ -1,0 +1,218 @@
+#!/bin/bash
+
+# Description: 
+# Create an HPC setup for juliaup, julia and some HPC key packages (MPI.jl, CUDA.jl, HDF5.jl, ADIOS2.jl, ...), including
+# - preferences for HPC key packages that require system libraries;
+# - a wrapper for juliaup that installs juliaup (and latest julia) on scratch if it is not already installed;
+# - an activation script that sets environment variables for juliaup, julia and HPC key packages;
+# - an uenv view equivalent to the activation script (optional).
+
+
+# Define info, error, cleanup and check functions
+
+export JUHPC="\e[1;34m[\e[0m \e[1;35mJ\e[0m\e[1;32mU\e[0m\e[1;31mH\e[0m\e[1;31mP\e[0m\e[1;31mC\e[0m\e[1;34m:\e[0m"
+
+info() {
+    local message="$1"
+    echo -e "$JUHPC $message" >&2
+}
+
+cleanup() {
+    info "cleaning up temporary juliaup installation in $TMP_JULIAUP_ROOTDIR."
+    rm -rf "$TMP_JULIAUP_ROOTDIR"
+}
+
+error() {
+    local message="$1"
+    info "\e[1;31mERROR:\e[0m $message"
+    cleanup
+    exit 1
+}
+
+check_var() {
+    for var_name in "$@"; do
+        if [ -z "${!var_name}" ]; then
+            error "$var_name is not set or empty."
+        fi
+    done
+}
+
+check_dir() {
+    for dir_name in "$@"; do
+        if [ -d "$dir_name" ]; then
+            error "Directory $dir_name already exists. To remove it run:\n    rm -rf \"$dir_name\""
+        fi
+    done
+}
+
+
+# Assign passed arguments to environment variables
+
+export JUHPC_SETUP_INSTALLDIR="$1"
+export JULIAUP_INSTALLDIR="$2"
+export JUHPC_UENV_VIEW_CREATOR="$3"
+
+
+# Set (derived) general environment variables
+
+export JULIAUP_BINDIR=$JULIAUP_INSTALLDIR/bin # juliaup and julia binaries
+export TMP=/dev/shm/$USER
+export TMP_JULIAUP_ROOTDIR=$TMP/juliaup
+
+
+# Start installation
+
+info "starting installation of HPC setup for juliaup, julia and HPC key packages requiring system libraries..."
+check_var "JULIAUP_INSTALLDIR" "JUHPC_SETUP_INSTALLDIR"
+check_dir "$JUHPC_SETUP_INSTALLDIR"
+
+
+# Download and install julia in /tmp using juliaup
+
+info "installing temporary juliaup installation in $TMP_JULIAUP_ROOTDIR..."
+
+export TMP_JULIAUP_BINDIR=$TMP_JULIAUP_ROOTDIR/bin # juliaup and julia binaries
+export JULIAUP_DEPOT_PATH=$TMP_JULIAUP_ROOTDIR/depot
+export JULIA_DEPOT_PATH=$TMP_JULIAUP_ROOTDIR/depot
+export JULIA_PROJECT=$JULIA_DEPOT_PATH/environments/latest
+export PATH=$TMP_JULIAUP_BINDIR:$PATH
+
+check_dir "$TMP_JULIAUP_ROOTDIR"
+curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path=$TMP_JULIAUP_ROOTDIR --background-selfupdate 0 --startup-selfupdate 0  || { error "failed to install Juliaup (and Julia) in $TMP_JULIAUP_ROOTDIR."; }
+
+info "... done."
+
+
+# Create preferences for HPC key packages that require system libraries (MPI.jl, CUDA.jl, HDF5.jl, ADIOS2.jl, ...)
+
+info "creating preferences for HPC key packages..."
+
+export JULIA_PREFDIR=$JUHPC_SETUP_INSTALLDIR/julia_preferences
+export JULIA_PREF_PROJECT=$JULIA_PREFDIR/Project.toml
+mkdir -p "$JULIA_PREFDIR" || { error "failed to create directory: $JULIA_PREFDIR"; }
+
+if [[ -n "${JUHPC_CUDA_HOME}" || -n "${JUHPC_ROCM_HOME}" ]]; then
+    julia --project=$JULIA_PREFDIR -e 'using Pkg; Pkg.add("Preferences")'
+    echo "[extras]" >> $JULIA_PREF_PROJECT
+fi
+
+if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set preference for using the local CUDA runtime before any installation of CUDA.jl to avoid downloading of artifacts
+    echo 'CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"' >> $JULIA_PREF_PROJECT
+    
+    julia --project=$JULIA_PREFDIR -e 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)'
+    if [ -n "${JUHPC_CUDA_RUNTIME_VERSION}" ]; then
+        julia --project=$JULIA_PREFDIR -e 'using Preferences; v=VersionNumber(ENV["JUHPC_CUDA_RUNTIME_VERSION"]); set_preferences!("CUDA_Runtime_jll", "version"=> "$(v.major).$(v.minor)")'
+    fi
+fi
+
+if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime before any installation of AMDGPU.jl to avoid downloading of artifacts
+    echo 'AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"' >> $JULIA_PREF_PROJECT
+
+    julia --project=$JULIA_PREFDIR -e 'using Preferences; set_preferences!("AMDGPU", "use_artifacts"=>false, "eager_gc"=>false)'
+fi
+
+if [ -n "${JUHPC_CUDA_HOME}" ]; then export CUDA_HOME=$JUHPC_CUDA_HOME; fi
+if [ -n "${JUHPC_ROCM_HOME}" ]; then export ROCM_PATH=$JUHPC_ROCM_HOME; fi
+
+julia --project=$JULIA_PREFDIR -e 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])'
+
+if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set  preference for using the local CUDA runtime in a more stable way (in case the previous would not be valid anymore)
+    julia --project=$JULIA_PREFDIR -e 'using CUDA; CUDA.set_runtime_version!((VersionNumber(ENV[key]) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)'
+fi
+
+if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime in a more stable way (in case the previous would not be valid anymore)
+    julia --project=$JULIA_PREFDIR -e 'using ROCM; ROCM.AMDGPU.ROCmDiscovery.use_artifacts!(false)'
+fi
+
+if [ -n "${JUHPC_MPI_VENDOR}" ]; then
+    check_var "JUHPC_MPI_EXEC"
+    julia --project=$JULIA_PREFDIR -e 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), vendor=ENV["JUHPC_MPI_VENDOR"])'
+elif [ -n "${JUHPC_MPI_HOME}" ]; then
+    check_var "JUHPC_MPI_EXEC"
+    julia --project=$JULIA_PREFDIR -e 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), extra_paths=["$(ENV["JUHPC_MPI_HOME"])/lib"])'
+fi
+
+if [ -n "${JUHPC_HDF5_HOME}" ]; then
+    julia --project=$JULIA_PREFDIR -e 'using HDF5; HDF5.API.set_libraries!("$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5.so", "$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5_hl.so")'
+fi
+
+info "... done."
+
+
+# Create a wrapper for juliaup that installs juliaup (and latest julia) on scratch if it is not already installed
+
+info "creating wrapper for juliaup..."
+
+export JULIAUP_WRAPPER_BINDIR=$JUHPC_SETUP_INSTALLDIR/juliaup_wrapper
+export JULIAUP_WRAPPER=$JULIAUP_WRAPPER_BINDIR/juliaup
+mkdir -p "$JULIAUP_WRAPPER_BINDIR" || { error "failed to create directory: $JULIAUP_WRAPPER_BINDIR"; }
+
+julia -e '
+println("""#!/bin/bash
+
+info() {
+    local message="$1"
+    echo -e "$JUHPC $message" >&2
+}
+
+if [ ! -f $(ENV["JULIAUP_BINDIR"])/juliaup ]; then
+    info "installing juliaup and latest julia in $(ENV["JULIAUP_INSTALLDIR"])..."
+    PATH_OLD=\$PATH
+    export PATH=\$(echo \$PATH | perl -pe "s|[^:]*juliaup(?:_wrapper)?[^:]*:?||g") # Remove all juliaup paths from PATH
+    curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path=$(ENV["JULIAUP_INSTALLDIR"]) --background-selfupdate 0 --startup-selfupdate 0 || { echo "Failed to install Juliaup (and Julia)." >&2; exit 1; }
+    export PATH=\$PATH_OLD
+    info "... done."
+else
+    $(ENV["JULIAUP_BINDIR"])/juliaup \$@
+fi
+""")
+' > $JULIAUP_WRAPPER
+chmod +x $JULIAUP_WRAPPER
+
+info "... done."
+
+
+# Create an activation script that sets environment variables for juliaup, julia and HPC key packages
+
+info "creating activation script..."
+
+export JULIAUP_DEPOT=$JULIAUP_INSTALLDIR/depot
+export JULIA_DEPOT=$JULIAUP_INSTALLDIR/depot
+export ACTIVATE_SCRIPT=$JUHPC_SETUP_INSTALLDIR/activate
+
+julia -e 'println("""
+export PATH=$(ENV["JULIAUP_WRAPPER_BINDIR"]):$(ENV["JULIAUP_BINDIR"]):\$PATH # The wrapper must be before the juliaup bindir
+export JULIAUP_DEPOT_PATH=$(ENV["JULIAUP_DEPOT"])
+export JULIA_DEPOT_PATH=$(ENV["JULIA_DEPOT"])
+export JULIA_LOAD_PATH=:$(ENV["JULIA_PREFDIR"])
+$(haskey(ENV,"JUHPC_CUDA_HOME") && ENV["JUHPC_CUDA_HOME"] != "" ? 
+    "export CUDA_HOME=$(ENV["JUHPC_CUDA_HOME"]); export JULIA_CUDA_MEMORY_POOL=none" : "")
+$(haskey(ENV,"JUHPC_ROCM_HOME") && ENV["JUHPC_ROCM_HOME"] != "" ?   
+    "export ROCM_PATH=$(ENV["JUHPC_ROCM_HOME"])" : "")
+$(haskey(ENV,"JUHPC_ADIOS2_HOME") && ENV["JUHPC_ADIOS2_HOME"] != "" ? 
+    "export JULIA_ADIOS2_PATH=$(ENV["JUHPC_ADIOS2_HOME"])" : "")
+echo -e "PATH=\$PATH\n"\
+        "JULIAUP_DEPOT_PATH=\$JULIAUP_DEPOT_PATH\n"\
+        "JULIA_DEPOT_PATH=\$JULIA_DEPOT_PATH\n"\
+        "JULIA_LOAD_PATH=\$JULIA_LOAD_PATH\n"\
+        "CUDA_HOME=\$CUDA_HOME\n"\
+        "JULIA_ADIOS2_PATH=\$JULIA_ADIOS2_PATH" >&2
+""")' > $ACTIVATE_SCRIPT
+
+info "... done."
+
+
+# Optionally create an uenv view equivalent to the activation script - only done if JUHPC_UENV_VIEW_CREATOR is set
+
+if [ -n "${JUHPC_UENV_VIEW_CREATOR}" ]; then
+    info "creating uenv view..."
+    julia $JUHPC_UENV_VIEW_CREATOR
+    info "... done."
+fi
+
+
+# Remove temporary juliaup installation
+
+cleanup
+
+info "... HPC setup for juliaup, julia and HPC key packages requiring system libraries is complete."
