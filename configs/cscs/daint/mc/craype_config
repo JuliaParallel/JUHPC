@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Author: Samuel Omlin, CSCS (omlins)
+#
+# Description: Definition of site specific variables and call of JUHPC.
+# Site: Piz Daint:mc, Swiss National Supercomputing Centre (CSCS)
+# Base: craype
+
+
+# Load required modules, including correct CPU and GPU target modules (NOTE: the same modules should be loaded when running julia - JUHPC can be used in a module build recipe...)
+module load daint-mc
+module switch PrgEnv-cray PrgEnv-gnu
+module load cray-hdf5-parallel
+module list
+
+
+# Environment variables for HPC key packages that require system libraries that require system libraries (MPI.jl, CUDA.jl, HDF5.jl and ADIOS2.jl)
+export JUHPC_CUDA_HOME=                                      # Used for CUDA.jl runtime discovery (set as CUDA_HOME in the activate script).
+export JUHPC_CUDA_RUNTIME_VERSION=$CRAY_CUDATOOLKIT_VERSION  # Used for CUDA.jl runtime version definition (set in preferences).
+export JUHPC_ROCM_HOME=                                      # Used for AMDGPU.jl runtime discovery (set as ROCM_PATH in the activate script).
+export JUHPC_MPI_HOME=$MPICH_DIR                             # Used for MPI.jl system binary discovery (set in preferences).
+export JUHPC_MPI_VENDOR=                                     # Used for MPI.jl system binary discovery (used to set preferences).
+export JUHPC_MPI_EXEC="srun -C mc"                           # Used for MPI.jl exec command discovery (set in preferences). Arguments are space separated, e.g. "srun -C mc".
+export JUHPC_HDF5_HOME=$HDF5_DIR                             # Used for HDF5.jl library discovery (set in preferences).
+export JUHPC_ADIOS2_HOME=                                    # Used for ADIOS2.jl library discovery (set as JULIA_ADIOS2_PATH in the activate script).
+
+
+# Call JUHPC
+git clone https://github.com/omlins/JUHPC
+JUHPC=./JUHPC/src/juhpc
+JUHPC_SETUP_INSTALLDIR=$SCRATCH/../julia/${HOSTNAME%%[0-9]*}-mc/juhpc_setup     # HPC setup installation environment variables must be expanded during installation.
+JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%[0-9]*}-mc/juliaup"  # User environment variables SCRATCH and HOSTNAME must not be expanded HPC setup installation, but during usage. Separate installation by HOSTNAME is required, because different hosts with different architectures can share the same file system (e.g., daint and eiger on ALPS).
+bash -l $JUHPC $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
+
+
+# Activate the HPC setup environment variables
+. $JUHPC_SETUP_INSTALLDIR/activate
+
+# Call juliaup to install juliaup and latest julia on scratch
+juliaup
+
+# Call juliaup to see its options
+juliaup
+
+# Call julia Pkg 
+julia -e 'using Pkg; Pkg.status()'
+
+# Add MPI.jl
+julia -e 'using Pkg; Pkg.add("MPI"); using MPI; MPI.versioninfo()'
+
+# Add HDF5.jl
+julia -e 'using Pkg; Pkg.add("HDF5"); using HDF5; @show HDF5.has_parallel()'
