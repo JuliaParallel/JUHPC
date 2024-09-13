@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Variable set in craype_config
+JUHPC_SETUP_INSTALLDIR=$SCRATCH/${HOSTNAME%%-*}/juhpc_setup  # HPC setup installation environment variables must be expanded during installation.
+
+# Load required modules (including correct CPU and GPU target modules)
+module load cray
+module switch PrgEnv-cray PrgEnv-gnu
+module load cudatoolkit craype-accel-nvidia90
+module load cray-hdf5-parallel
+module list
+
+# Activate the HPC setup environment variables
+. $JUHPC_SETUP_INSTALLDIR/activate
+
+# Call juliaup to install juliaup and latest julia on scratch
+juliaup
+
+# Call juliaup to see its options
+juliaup
+
+# Call julia Pkg 
+julia -e 'using Pkg; Pkg.status()'
+
+# Add CUDA.jl
+julia -e 'using Pkg; Pkg.add("CUDA"); using CUDA; CUDA.versioninfo()'
+
+# Add MPI.jl
+julia -e 'using Pkg; Pkg.add("MPI"); using MPI; MPI.versioninfo()'
+
+# Add HDF5.jl
+julia -e 'using Pkg; Pkg.add("HDF5"); using HDF5; @show HDF5.has_parallel()'
+
+# Test CUDA-aware MPI
+cd ~/cudaaware
+MPICH_GPU_SUPPORT_ENABLED=1 srun -Acsstaff -C'gpu' -N2 -n2 julia cudaaware.jl
