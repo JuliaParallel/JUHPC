@@ -16,14 +16,11 @@ module list
 
 
 # Environment variables for HPC key packages that require system libraries that require system libraries (MPI.jl, CUDA.jl, HDF5.jl and ADIOS2.jl)
-export JUHPC_CUDA_HOME=$CUDA_HOME                            # Used for CUDA.jl runtime discovery (set as CUDA_HOME in the activate script).
-export JUHPC_CUDA_RUNTIME_VERSION=$CRAY_CUDATOOLKIT_VERSION  # Used for CUDA.jl runtime version definition (set in preferences).
-export JUHPC_ROCM_HOME=                                      # Used for AMDGPU.jl runtime discovery (set as ROCM_PATH in the activate script).
-export JUHPC_MPI_HOME=$MPICH_DIR                             # Used for MPI.jl system binary discovery (set in preferences).
-export JUHPC_MPI_VENDOR=                                     # Used for MPI.jl system binary discovery (used to set preferences).
-export JUHPC_MPI_EXEC="srun -C gpu"                          # Used for MPI.jl exec command discovery (set in preferences). Arguments are space separated, e.g. "srun -C gpu".
-export JUHPC_HDF5_HOME=$HDF5_DIR                             # Used for HDF5.jl library discovery (set in preferences).
-export JUHPC_ADIOS2_HOME=                                    # Used for ADIOS2.jl library discovery (set as JULIA_ADIOS2_PATH in the activate script).
+export JUHPC_CUDA_HOME=$CUDA_HOME
+export JUHPC_CUDA_RUNTIME_VERSION=$CRAY_CUDATOOLKIT_VERSION
+export JUHPC_MPI_HOME=$MPICH_DIR
+export JUHPC_MPI_EXEC="srun -C gpu"
+export JUHPC_HDF5_HOME=$HDF5_DIR
 
 
 # Create site-specific post-install script (currently MPIPreferences does not provide an option to set required preloads if not automatically detected; JUHPC_MPI_VENDOR fails on Piz Daint...)
@@ -39,32 +36,6 @@ echo 'using Preferences
 # Call JUHPC
 git clone https://github.com/omlins/JUHPC
 JUHPC=./JUHPC/src/juhpc
-JUHPC_SETUP_INSTALLDIR=$SCRATCH/../julia/${HOSTNAME%%[0-9]*}-gpu/juhpc_setup     # HPC setup installation environment variables must be expanded during installation.
-JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%[0-9]*}-gpu/juliaup"  # User environment variables SCRATCH and HOSTNAME must not be expanded HPC setup installation, but during usage. Separate installation by HOSTNAME is required, because different hosts with different architectures can share the same file system (e.g., daint and eiger on ALPS).
+JUHPC_SETUP_INSTALLDIR=$SCRATCH/../julia/${HOSTNAME%%[0-9]*}-gpu/juhpc_setup
+JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%[0-9]*}-gpu/juliaup"
 bash -l $JUHPC $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR $JUHPC_POST_INSTALL_JL
-
-
-# Activate the HPC setup environment variables
-. $JUHPC_SETUP_INSTALLDIR/activate
-
-# Call juliaup to install juliaup and latest julia on scratch
-juliaup
-
-# Call juliaup to see its options
-juliaup
-
-# Call julia Pkg 
-julia -e 'using Pkg; Pkg.status()'
-
-# Add CUDA.jl
-julia -e 'using Pkg; Pkg.add("CUDA"); using CUDA; CUDA.versioninfo()'
-
-# Add MPI.jl
-julia -e 'using Pkg; Pkg.add("MPI"); using MPI; MPI.versioninfo()'
-
-# Add HDF5.jl
-julia -e 'using Pkg; Pkg.add("HDF5"); using HDF5; @show HDF5.has_parallel()'
-
-# Test CUDA-aware MPI
-cd ~/cudaaware
-MPICH_GPU_SUPPORT_ENABLED=1 srun -Acsstaff -C'gpu' -N2 -n2 julia cudaaware.jl
