@@ -4,19 +4,7 @@
 #
 # Description: Definition of site specific variables and call of JUHPC.
 # Site: LUMI, EuroHPC JU
-# Base: craype
-
-
-# module load LUMI/22.08
-# module load partition/G
-# module load rocm/5.3.3
-# module load cray-hdf5-parallel
-
-# module load CrayEnv
-# module switch PrgEnv-cray PrgEnv-gnu #PrgEnv-amd
-# module load rocm craype-accel-nvidia90
-# module load cray-hdf5-parallel
-# module list
+# Base: craype (LUMI-flavored)
 
 # Load required modules (including correct CPU and GPU target modules)
 module load LUMI
@@ -36,7 +24,6 @@ export JUHPC_HDF5_HOME=$HDF5_DIR
 # Call JUHPC
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/${HOSTNAME%%[0-9]*}/juhpc_setup  #SCRATCH is assumed to be defined in ~/.bashrc, e.g., SCRATCH=/scratch/project_465000105/$USER
 JULIAUP_INSTALLDIR="\$SCRATCH/\${HOSTNAME%%[0-9]*}/juliaup"
-VERSION="v0.1.0"
-#wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
-wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/main/juhpc -O /tmp/juhpc
+VERSION="v0.1.1"
+wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
 bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
