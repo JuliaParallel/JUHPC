@@ -34,8 +34,8 @@ echo 'using Preferences
 
 
 # Call JUHPC
-git clone https://github.com/omlins/JUHPC
-JUHPC=./JUHPC/src/juhpc
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/../julia/${HOSTNAME%%[0-9]*}-gpu/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%[0-9]*}-gpu/juliaup"
-bash -l $JUHPC $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR $JUHPC_POST_INSTALL_JL
+VERSION="v0.1.0"
+wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
+bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR $JUHPC_POST_INSTALL_JL
