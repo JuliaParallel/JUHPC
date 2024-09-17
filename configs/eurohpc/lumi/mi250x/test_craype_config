@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Variable set in craype_config
+JUHPC_SETUP_INSTALLDIR=$SCRATCH/${HOSTNAME%%[0-9]*}/juhpc_setup
+
+# Load required modules (including correct CPU and GPU target modules)
+module load LUMI
+module load partition/G         # loads CPU and GPU target modules (craype-x86-trento, craype-accel-amd-gfx90a)
+module load cpeGNU              # LUMI-wrapper for PrgEnv-gnu
+module load rocm
+module load cray-hdf5-parallel
+module list
+
+# Activate the HPC setup environment variables
+. $JUHPC_SETUP_INSTALLDIR/activate
+
+# Call juliaup to install juliaup and latest julia on scratch
+juliaup
+
+# Call juliaup to see its options
+juliaup
+
+# Call julia Pkg 
+julia -e 'using Pkg; Pkg.status()'
+
+# Add AMDGPU.jl
+julia -e 'using Pkg; Pkg.add("AMDGPU"); using AMDGPU; AMDGPU.versioninfo()'
+
+# Add MPI.jl
+julia -e 'using Pkg; Pkg.add("MPI"); using MPI; MPI.versioninfo()'
+
+# Add HDF5.jl
+julia -e 'using Pkg; Pkg.add("HDF5"); using HDF5; @show HDF5.has_parallel()'
+
+# Test AMDGPU-aware MPI
+julia -e 'using Pkg; Pkg.add(["ImplicitGlobalGrid", "ParallelStencil"]);'
+cd ~/rocmaware
+MPICH_GPU_SUPPORT_ENABLED=1 IGG_ROCMAWARE_MPI=1 srun --time=00:09:00 -pdev-g -Aproject_465000557 -N2 -n2 --gpus-per-node=8 julia -O3 --check-bounds=no diffusion3D.jl
