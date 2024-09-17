@@ -21,8 +21,8 @@ export JUHPC_HDF5_HOME=$HDF5_DIR
 
 
 # Call JUHPC
-git clone https://github.com/omlins/JUHPC
-JUHPC=./JUHPC/src/juhpc
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/${HOSTNAME%%-*}/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/\${HOSTNAME%%-*}/juliaup"
-bash -l $JUHPC $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
+VERSION="v0.1.0"
+wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
+bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
