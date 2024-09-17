@@ -12,6 +12,20 @@
 
 export JUHPC="\e[1;34m[\e[0m \e[1;35mJ\e[0m\e[1;32mU\e[0m\e[1;31mH\e[0m\e[1;31mP\e[0m\e[1;31mC\e[0m\e[1;34m:\e[0m"
 
+export JUHPC_LOGO=$(cat <<'EOF'
+\e[1;35m     ██╗\e[0m  \e[1;32m██╗   ██╗\e[0m  \e[1;31m██╗  ██╗██████╗  ██████╗\e[0m
+\e[1;35m     ██║\e[0m  \e[1;32m██║   ██║\e[0m  \e[1;31m██║  ██║██╔══██╗██╔════╝\e[0m
+\e[1;35m     ██║\e[0m  \e[1;32m██║   ██║\e[0m  \e[1;31m███████║██████╔╝██║     \e[0m
+\e[1;35m██╗  ██║\e[0m  \e[1;32m██║   ██║\e[0m  \e[1;31m██╔══██║██╔═══╝ ██║     \e[0m
+\e[1;35m╚█████╔╝\e[0m  \e[1;32m╚██████╔╝\e[0m  \e[1;31m██║  ██║██║     ╚██████╗\e[0m
+\e[1;35m ╚════╝ \e[0m  \e[1;32m ╚═════╝ \e[0m  \e[1;31m╚═╝  ╚═╝╚═╝      ╚═════╝\e[0m
+EOF
+)
+
+print_logo() {
+  echo -e "$JUHPC_LOGO" >&2
+}
+
 info() {
     local message="$1"
     echo -e "$JUHPC $message" >&2
@@ -62,6 +76,7 @@ export TMP_JULIAUP_ROOTDIR=$TMP/juliaup
 
 # Start installation
 
+print_logo
 info "Starting installation of HPC setup for juliaup, julia and HPC key packages requiring system libraries..."
 check_var "JULIAUP_INSTALLDIR" "JUHPC_SETUP_INSTALLDIR"
 check_dir "$JUHPC_SETUP_INSTALLDIR"
@@ -121,7 +136,7 @@ if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set  preference for using the local CUDA
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime in a more stable way (in case the previous would not be valid anymore)
-    julia --project=$JULIA_PREFDIR -e 'using ROCM; ROCM.AMDGPU.ROCmDiscovery.use_artifacts!(false)'
+    julia --project=$JULIA_PREFDIR -e 'using AMDGPU; AMDGPU.ROCmDiscovery.use_artifacts!(false)'
 fi
 
 if [ -n "${JUHPC_MPI_VENDOR}" ]; then
@@ -150,12 +165,17 @@ mkdir -p "$JULIAUP_WRAPPER_BINDIR" || { error "failed to create directory: $JULI
 julia -e '
 println("""#!/bin/bash
 
+print_logo() {
+  echo -e "$(ENV["JUHPC_LOGO"])" >&2
+}
+
 info() {
     local message="\$1"
     echo -e "$(ENV["JUHPC"]) \$message" >&2
 }
 
 if [ ! -f $(ENV["JULIAUP_BINDIR"])/juliaup ]; then
+    print_logo
     info "This is the first call to juliaup; juliaup and the latest julia will now be installed. After that, you can use juliaup and julia normally. Installing in $(ENV["JULIAUP_INSTALLDIR"])..."
     PATH_OLD=\$PATH
     export PATH=\$(echo \$PATH | perl -pe "s|[^:]*juliaup(?:_wrapper)?[^:]*:?||g") # Remove all juliaup paths from PATH
