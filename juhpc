@@ -96,6 +96,8 @@ export PATH=$TMP_JULIAUP_BINDIR:$PATH
 check_dir "$TMP_JULIAUP_ROOTDIR"
 curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path=$TMP_JULIAUP_ROOTDIR --background-selfupdate 0 --startup-selfupdate 0  || { error "failed to install Juliaup (and Julia) in $TMP_JULIAUP_ROOTDIR."; }
 
+if [ ! -f "$TMP_JULIAUP_BINDIR/juliaup" ]; then error "temporary juliaup installation failed."; fi
+
 info "... done."
 
 
