@@ -90,7 +90,7 @@ export TMP_JULIAUP_BINDIR=$TMP_JULIAUP_ROOTDIR/bin # juliaup and julia binaries
 export JULIAUP_DEPOT_PATH=$TMP_JULIAUP_ROOTDIR/depot
 export JULIA_DEPOT_PATH=$TMP_JULIAUP_ROOTDIR/depot
 export JULIA_PROJECT=$JULIA_DEPOT_PATH/environments/latest
-export PATH=$(echo $PATH | perl -pe "s|[^:]*juliaup(?:_wrapper)?[^:]*:?||g") # Remove all juliaup paths from PATH
+export PATH=$(echo $PATH | perl -pe "s|[^:]*julia(?:up)?[^:]*:?||g") # Remove all juliaup paths from PATH
 export PATH=$TMP_JULIAUP_BINDIR:$PATH
 
 check_dir "$TMP_JULIAUP_ROOTDIR"
