@@ -6,7 +6,7 @@ JUHPC is an attempt to convert the numerous efforts at different HPC sites for d
 
 An important lesson learned by the Julia HPC community for providing Julia at HPC sites is not to preinstall any packages site wide. JUHPC pushes this insight even one step further and does not preinstall Julia either. Instead, Juliaup is leveraged and the installation of Juliaup, Julia and packages is preconfigured for being automatically executed by the end user. Furthermore, for maximal robustness, the preferences are created using the available API calls of the corresponding packages.
 
-Concretely, JUHPC creates an HPC setup for Juliaup, Julia and some HPC key packages (MPI.jl, CUDA.jl, HDF5.jl, ADIOS2.jl, ...), including
+Concretely, JUHPC creates an HPC setup for Juliaup, Julia and some HPC key packages (MPI.jl, CUDA.jl, AMDGPU.jl HDF5.jl, ADIOS2.jl, ...), including
 - preferences for HPC key packages that require system libraries;
 - a wrapper for Juliaup that will install Juliaup (and latest Julia) automatically in a predefined location (e.g., scratch) when the end user calls `juliaup` the first time;
 - an activation script that sets environment variables for Juliaup, Julia and HPC key packages;
@@ -63,8 +63,8 @@ The `juhpc` bash script is called as follows:
 juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR [$JUHPC_POST_INSTALL]
 ```
 I.e., it takes the following arguments:
-- `JUHPC_SETUP_INSTALLDIR`: the folder into which the HPC setup is installed, e.g., `"$SCRATCH/../julia/${HOSTNAME%%-*}/juhpc_setup"` (assuming `$SCRATCH/../julia` is a wipe out protected folder on scratch).
-- `JULIAUP_INSTALLDIR`: the folder into which Juliaup and Julia will automatically be installed the first time the end user calls `juliaup`. *User environment variables should be escaped* in order not to have them expanded during HPC setup installation, but during its usage by the end user, e.g., `"\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"` (assuming `$SCRATCH/../julia` is a wipe out protected folder on scratch).
+- `JUHPC_SETUP_INSTALLDIR`: the folder into which the HPC setup is installed, e.g., `"$SCRATCH/../julia/${HOSTNAME%%-*}/juhpc_setup"`.
+- `JULIAUP_INSTALLDIR`: the folder into which Juliaup and Julia will automatically be installed the first time the end user calls `juliaup`. *User environment variables should be escaped* in order not to have them expanded during HPC setup installation, but during its usage by the end user, e.g., `"\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"`.
 - `JUHPC_POST_INSTALL_JL` (optional): site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 
@@ -87,7 +87,7 @@ module load cudatoolkit craype-accel-nvidia90
 module load cray-hdf5-parallel
 module list
 
-# Environment variables for HPC key packages that require system libraries that require system libraries (MPI.jl, CUDA.jl, HDF5.jl and ADIOS2.jl)
+# Environment variables for HPC key packages that require system libraries that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl HDF5.jl and ADIOS2.jl)
 export JUHPC_CUDA_HOME=$CUDA_HOME
 export JUHPC_CUDA_RUNTIME_VERSION=$CRAY_CUDATOOLKIT_VERSION
 export JUHPC_MPI_VENDOR="cray"
@@ -111,7 +111,7 @@ export ENV_META=$ENV_MOUNT/meta
 export ENV_EXTRA=$ENV_META/extra
 export ENV_JSON=$ENV_META/env.json
 
-# Environment variables for HPC key packages that require system libraries (MPI.jl, CUDA.jl, HDF5.jl and ADIOS2.jl)
+# Environment variables for HPC key packages that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl HDF5.jl and ADIOS2.jl)
 export JUHPC_CUDA_HOME=$(spack -C $ENV_MOUNT/config location -i cuda)
 export JUHPC_CUDA_RUNTIME_VERSION=$(spack --color=never -C $ENV_MOUNT/config find cuda | \
                                     perl -ne 'print $1 if /cuda@([\d.]+)/')

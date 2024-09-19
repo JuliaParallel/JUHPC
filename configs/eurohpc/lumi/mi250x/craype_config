@@ -14,7 +14,7 @@ module load rocm
 module load cray-hdf5-parallel
 module list
 
-# Environment variables for HPC key packages that require system libraries that require system libraries (MPI.jl, CUDA.jl, HDF5.jl and ADIOS2.jl)
+# Environment variables for HPC key packages that require system libraries that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl HDF5.jl and ADIOS2.jl)
 export JUHPC_ROCM_HOME=$ROCM_PATH
 export JUHPC_MPI_VENDOR="cray"
 export JUHPC_MPI_EXEC="srun"

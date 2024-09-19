@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Description: 
-# Create an HPC setup for juliaup, julia and some HPC key packages (MPI.jl, CUDA.jl, HDF5.jl, ADIOS2.jl, ...), including
+# Create an HPC setup for juliaup, julia and some HPC key packages (MPI.jl, CUDA.jl, AMDGPU.jl HDF5.jl, ADIOS2.jl, ...), including
 # - preferences for HPC key packages that require system libraries;
 # - a wrapper for juliaup that installs juliaup (and latest julia) in an appropriate location (e.g., scratch) if it is not already installed;
 # - an activation script that sets environment variables for juliaup, julia and HPC key packages;
@@ -98,7 +98,7 @@ curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --pat
 info "... done."
 
 
-# Create preferences for HPC key packages that require system libraries (MPI.jl, CUDA.jl, HDF5.jl, ADIOS2.jl, ...)
+# Create preferences for HPC key packages that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl HDF5.jl, ADIOS2.jl, ...)
 
 info "Creating preferences for HPC key packages..."
 
