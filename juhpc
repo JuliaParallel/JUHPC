@@ -179,8 +179,7 @@ info_end "$INFO_MSG"
 
 # Create a wrapper for juliaup that installs juliaup (and latest julia) on scratch if it is not already installed
 
-INFO_MSG="Creating wrapper for juliaup"
-info_start "$INFO_MSG"
+info_start "Creating wrapper for juliaup"
 
 export JULIAUP_WRAPPER_BINDIR="$JUHPC_SETUP_INSTALLDIR/juliaup_wrapper"
 export JULIAUP_WRAPPER="$JULIAUP_WRAPPER_BINDIR/juliaup"
@@ -217,13 +216,12 @@ fi
 ' > "$JULIAUP_WRAPPER"
 chmod +x "$JULIAUP_WRAPPER"
 
-info_end "$INFO_MSG"
+info "... done."
 
 
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
 
-INFO_MSG="Creating activation script"
-info_start "$INFO_MSG"
+info_start "Creating activation script"
 
 export JULIAUP_DEPOT="$JULIAUP_INSTALLDIR/depot"
 export JULIA_DEPOT="$JULIAUP_INSTALLDIR/depot"
@@ -259,7 +257,7 @@ $(haskey(ENV,"JUHPC_ADIOS2_HOME") && ENV["JUHPC_ADIOS2_HOME"] != "" ? """
     """ : "")
 """)' > "$ACTIVATE_SCRIPT"
 
-info_end "$INFO_MSG"
+info "... done."
 
 
 # Optionally execute a site-specific post installation julia script (if passed a third argument)
