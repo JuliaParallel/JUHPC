@@ -198,9 +198,9 @@ info() {
     echo -e "$(ENV["JUHPC"]) \$message" >&2
 }
 
-export JULIAUP_EXE="$(ENV["JULIAUP_BINDIR"])/juliaup"
+JULIAUP_EXE="$(ENV["JULIAUP_BINDIR"])/juliaup"
 
-if [ ! -f "$JULIAUP_EXE" ]; then
+if [ ! -f "\$JULIAUP_EXE" ]; then
     print_logo
     info "This is the first call to juliaup; juliaup and the latest julia will now be installed. After that, you can use juliaup and julia normally. Installing in $(ENV["JULIAUP_INSTALLDIR"])..."
     sleep 3
@@ -208,10 +208,10 @@ if [ ! -f "$JULIAUP_EXE" ]; then
     export PATH=\$(echo \$PATH | perl -pe "s|[^:]*juliaup(?:_wrapper)?[^:]*:?||g") # Remove all juliaup paths from PATH
     curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path="$(ENV["JULIAUP_INSTALLDIR"])" --background-selfupdate 0 --startup-selfupdate 0 || { echo "Failed to install Juliaup (and Julia)." >&2; exit 1; }
     export PATH="\$PATH_OLD"
-    if [ ! -f "$JULIAUP_EXE" ]; then error "juliaup installation failed."; fi
+    if [ ! -f "\$JULIAUP_EXE" ]; then error "juliaup installation failed."; fi
     info "... done. Installation of juliaup and the latest julia in $(ENV["JULIAUP_INSTALLDIR"]) completed. You can use juliaup and julia normally."
 else
-    "$JULIAUP_EXE" \$@
+    "\$JULIAUP_EXE" \$@
 fi
 """)
 ' > "$JULIAUP_WRAPPER"
