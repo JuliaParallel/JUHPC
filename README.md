@@ -1,4 +1,4 @@
-# JUHPC <!-- omit from toc -->
+<h1>#<span style="color:green">J</span><span style="color:red">U</span><span style="color:purple">HPC</span></h1>
 
 ## Introduction: a community project for everyone - including end users
 
