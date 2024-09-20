@@ -198,7 +198,7 @@ info() {
     echo -e "$(ENV["JUHPC"]) \$message" >&2
 }
 
-exportJULIAUP_EXE="$(ENV["JULIAUP_BINDIR"])/juliaup"
+export JULIAUP_EXE="$(ENV["JULIAUP_BINDIR"])/juliaup"
 
 if [ ! -f "$JULIAUP_EXE" ]; then
     print_logo
