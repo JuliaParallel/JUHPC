@@ -1,4 +1,4 @@
-# JUHPC <!-- omit from toc -->
+$\Huge{\textbf{\color{purple}J\color{green}U\color{red}{HPC}}}$
 
 ## Introduction: a community project for everyone - including end users
 
@@ -68,9 +68,11 @@ I.e., it takes the following arguments:
 - `JUHPC_POST_INSTALL_JL` (optional): site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 
-> ℹ️  The above examples assume that `$SCRATCH/../julia` is a wipe out protected folder on scratch.
+> [!NOTE]
+> The above examples assume that `$SCRATCH/../julia` is a wipe out protected folder on scratch.
 
-> ⚠️ Separate installation by HOSTNAME is required if different hosts with different architectures share file system used for installation (e.g., daint and eiger on ALPS).
+> [!IMPORTANT]
+> Separate installation by HOSTNAME is required if different hosts with different architectures share file system used for installation (e.g., daint and eiger on ALPS).
 
 
 ## Examples: HPC setup installations on the ALPS supercomputer (CSCS)
