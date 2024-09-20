@@ -1,8 +1,6 @@
-$$
-\begin{flushleft}
+$
 \Huge{\textbf{\color{purple}J\color{green}U\color{red}{HPC}}}
-\end{flushleft}
-$$
+$
 
 ## Introduction: a community project for everyone - including end users
 
