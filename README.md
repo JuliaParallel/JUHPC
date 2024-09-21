@@ -1,4 +1,4 @@
-# $\textsf{\textbf{\color{purple}J\color{green}U\color{red}HPC}}$: Julia$\textsf{\textbf{\color{blue}[}}$up$\textsf{\textbf{\color{blue}]}}$ for HPC  <!-- omit from toc -->
+# $\textsf{\textbf{\color{purple}J\color{green}U\color{red}HPC}}$: Julia\textsf{\textbf{\color{blue}[}}up\textsf{\textbf{\color{blue}]}} for HPC  <!-- omit from toc -->
 
 
 
