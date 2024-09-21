@@ -197,6 +197,12 @@ info() {
     echo -e "$(ENV["JUHPC"]) \$message" >&2
 }
 
+error() {
+    local message="\$1"
+    info "\e[1;31mERROR:\e[0m \$message"
+    exit 1
+}
+
 JULIAUP_EXE="$(ENV["JULIAUP_BINDIR"])/juliaup"
 
 if [ ! -f "\$JULIAUP_EXE" ]; then
@@ -214,6 +220,8 @@ else
 fi
 """)
 ' > "$JULIAUP_WRAPPER"
+
+if [ ! -s "$JULIAUP_WRAPPER" ]; then error "Juliaup wrapper is missing or empty."; fi
 chmod +x "$JULIAUP_WRAPPER"
 
 info "... done."
@@ -221,7 +229,7 @@ info "... done."
 
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
 
-info_start "Creating activation script"
+info_start "Creating activate script"
 
 export JULIAUP_DEPOT="$JULIAUP_INSTALLDIR/depot"
 export JULIA_DEPOT="$JULIAUP_INSTALLDIR/depot"
@@ -256,6 +264,8 @@ $(haskey(ENV,"JUHPC_ADIOS2_HOME") && ENV["JUHPC_ADIOS2_HOME"] != "" ? """
     info "JULIA_ADIOS2_PATH: \$JULIA_ADIOS2_PATH"
     """ : "")
 """)' > "$ACTIVATE_SCRIPT"
+
+if [ ! -s "$ACTIVATE_SCRIPT" ]; then error "Activate script is missing or empty."; fi
 
 info "... done."
 
