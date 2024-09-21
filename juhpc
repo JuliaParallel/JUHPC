@@ -197,6 +197,12 @@ info() {
     echo -e "$(ENV["JUHPC"]) \$message" >&2
 }
 
+error() {
+    local message="\$1"
+    info "\e[1;31mERROR:\e[0m \$message"
+    exit 1
+}
+
 JULIAUP_EXE="$(ENV["JULIAUP_BINDIR"])/juliaup"
 
 if [ ! -f "\$JULIAUP_EXE" ]; then
