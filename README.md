@@ -1,4 +1,4 @@
-$\Huge{\textsf{\color{purple}\mathbf{J}\color{green}\mathbf{U}\color{red}{\mathbf{HPC}}: \color{purple}{Julia}\color{blue}\mathbf{[}\color{green}{up}\color{blue}\mathbf{]} for \color{red}{HPC}}}$
+$\Huge{\textsf{\textbf{\color{purple}J\color{green}U\color{red}HPC}}\textsf{\color{black}: \color{purple}Julia\color{blue}[\color{green}up\color{blue}]\color{black} for \color{red}HPC}}$
 
 
 ## Introduction: a community project for everyone - including end users
