@@ -1,4 +1,5 @@
-$\Huge{\textbf{\color{purple}J\color{green}U\color{red}{HPC}}}$
+$\Huge{\textsf{\color{purple}\mathbf{J}\color{green}\mathbf{U}\color{red}{\mathbf{HPC}}: \color{purple}{Julia}\color{blue}\mathbf{[}\color{green}{up}\color{blue}\mathbf{]} for \color{red}{HPC}}}$
+
 
 ## Introduction: a community project for everyone - including end users
 
@@ -13,6 +14,7 @@ Concretely, JUHPC creates an HPC setup for Juliaup, Julia and some HPC key packa
 - optional execution of a site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 HPC sites can install the HPC setup into a folder in a location accessible to all users (which can also be part, e.g., of a uenv). HPC end users can install the HPC setup into any folder to their liking, accessible from the compute nodes; it is then enough to source the activate script in this folder in order to activate the HPC setup.
+
 
 ## Table of contents <!-- omit from toc -->
 - [Introduction: a community project for everyone - including end users](#introduction-a-community-project-for-everyone---including-end-users)
@@ -38,16 +40,16 @@ Details are given in the following two subsections.
 ### 1. Export environment variables for the installation of some HPC key packages
 
 - CUDA
-  - `JUHPC_CUDA_HOME`: Activates HPC setup for CUDA and is used for CUDA.jl runtime discovery (set as CUDA_HOME in the activate script).
+  - `JUHPC_CUDA_HOME`: Activates HPC setup for CUDA and is used for CUDA.jl runtime discovery (set as `CUDA_HOME` in the activate script).
   - `JUHPC_CUDA_RUNTIME_VERSION`: Used to set CUDA.jl preferences (fixes runtime version enabling pre-compilation on login nodes).
 
 - AMDGPU
-  - `JUHPC_ROCM_HOME`: Activates HPC setup for AMDGPU and is used for AMDGPU.jl runtime discovery (set as ROCM_PATH in the activate script).
+  - `JUHPC_ROCM_HOME`: Activates HPC setup for AMDGPU and is used for AMDGPU.jl runtime discovery (set as `ROCM_PATH` in the activate script).
 
 - MPI
   - `JUHPC_MPI_HOME`: Activates HPC setup for MPI and is used to set MPI.jl preferences. Incompatible with `JUHPC_MPI_VENDOR`
   - `JUHPC_MPI_VENDOR`: Activates HPC setup for MPI and is used to set MPI.jl preferences (currently only "cray" is valid, see [here](https://juliaparallel.org/MPI.jl/stable/configuration/#Notes-about-vendor-provided-MPI-backends)). Incompatible with `JUHPC_MPI_HOME`.
-  - `JUHPC_MPI_EXEC`: Used to set MPI.jl preferences (exec command definition). Arguments are space separated, e.g., "srun -C gpu".
+  - `JUHPC_MPI_EXEC`: Used to set MPI.jl preferences (exec command definition). Arguments are space separated, e.g., `"srun -C gpu"`.
 
 - HDF5
   - `JUHPC_HDF5_HOME`: Activates HPC setup for HDF5 and is used to set HDF5.jl preferences.
@@ -55,29 +57,33 @@ Details are given in the following two subsections.
 - ADIOS2
   - `JUHPC_ADIOS2_HOME`: Activates HPC setup for ADIOS2 and is used to set ADIOS2.jl preferences.
 
+> [!NOTE]
+> The automatically defined preferences suitable for typical HPC needs can be modified with a post install Julia script (see `JUHPC_POST_INSTALL_JL` in next section). Also preferences for other packages could be added this way if needed. Of course, any of these preferences can later be overwritten by local preferences.
 
 ### 2. Call JUHPC
 
 The `juhpc` bash script is called as follows:
 ```bash
-juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR [$JUHPC_POST_INSTALL]
+juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR [$JUHPC_POST_INSTALL_JL]
 ```
 I.e., it takes the following arguments:
 - `JUHPC_SETUP_INSTALLDIR`: the folder into which the HPC setup is installed, e.g., `"$SCRATCH/../julia/${HOSTNAME%%-*}/juhpc_setup"`.
 - `JULIAUP_INSTALLDIR`: the folder into which Juliaup and Julia will automatically be installed the first time the end user calls `juliaup`. *User environment variables should be escaped* in order not to have them expanded during HPC setup installation, but during its usage by the end user, e.g., `"\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"`.
 - `JUHPC_POST_INSTALL_JL` (optional): site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
-
 > [!NOTE]
 > The above examples assume that `$SCRATCH/../julia` is a wipe out protected folder on scratch.
 
 > [!IMPORTANT]
-> Separate installation by HOSTNAME is required if different hosts with different architectures share file system used for installation (e.g., daint and eiger on ALPS).
+> Separate installation by `HOSTNAME` is required if different hosts with different architectures share file system used for installation (e.g., daint and eiger on ALPS).
 
 
 ## Examples: HPC setup installations on the ALPS supercomputer (CSCS)
 
-Examples of HPC setup installations are found in the folder `configs` of which two are featured in the following.
+In the following you can find two examples of HPC setup installations.
+
+> [!TIP]
+> More examples are found in the folder [examples](/examples/).
 
 ### Example 1: using Cray Programming Environment
 
@@ -103,6 +109,9 @@ VERSION="v0.1.1"
 wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
 bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
 ```
+
+> [!TIP]
+> The corresponding file is found [here](/examples/cscs/alps/gh200/craype_config).
 
 ### Example 2: using UENV
 
@@ -172,6 +181,10 @@ cd ~/cudaaware
 MPICH_GPU_SUPPORT_ENABLED=1 srun -Acsstaff -C'gpu' -N2 -n2 julia cudaaware.jl
 ```
 
+> [!TIP]
+> The corresponding file is found [here](/examples/cscs/alps/gh200/test_craype_config).
+
+
 ### Test of example 2
 
 ```bash
@@ -207,7 +220,7 @@ MPICH_GPU_SUPPORT_ENABLED=1 srun -Acsstaff -C'gpu' -N2 -n2 julia cudaaware.jl
 ## Your contributions
 
 Any contribution is valuable to the Julia HPC community:
-- contribute the HPC setup config file for your cluster or supercomputer in `configs` as an example for others;
+- contribute the HPC setup config file for your cluster or supercomputer in the folder [examples](/examples/) as an example for others;
 - open a PR with some enhancement or fix;
 - open an issue for a bug or an idea for enhancement.
 
