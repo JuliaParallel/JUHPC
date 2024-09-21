@@ -1,4 +1,4 @@
-# $\Huge{\textsf{\textbf{\color{purple}J\color{green}U\color{red}HPC}}}$: Julia[up] for HPC  <!-- omit from toc -->
+# $\textsf{\textbf{\color{purple}J\color{green}U\color{red}HPC}}$: Julia$\textsf{\textbf{\color{purple}[}}$up$\textsf{\textbf{\color{purple}]}}$ for HPC  <!-- omit from toc -->
 
 
 ## Introduction: a community project for everyone - including end users
