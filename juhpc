@@ -31,16 +31,6 @@ info() {
     echo -e "$JUHPC $message" >&2
 }
 
-info_start() {
-    local message="$1"
-    info "$message..."
-}
-
-info_end() {
-    local message="$1"
-    info "... done. $message completed."
-}
-
 cleanup() {
     info "cleaning up temporary juliaup installation in $TMP_JULIAUP_ROOTDIR."
     rm -rf "$TMP_JULIAUP_ROOTDIR"
@@ -102,8 +92,7 @@ check_dir "$JUHPC_SETUP_INSTALLDIR"
 
 # Download and install julia in /tmp using juliaup
 
-INFO_MSG="Installing temporary juliaup installation in $TMP_JULIAUP_ROOTDIR"
-info_start "$INFO_MSG"
+info "Installing juliaup and julia temporarily in $TMP_JULIAUP_ROOTDIR..."
 
 export TMP_JULIAUP_BINDIR="$TMP_JULIAUP_ROOTDIR/bin" # juliaup and julia binaries
 export JULIAUP_DEPOT_PATH="$TMP_JULIAUP_ROOTDIR/depot"
@@ -117,16 +106,16 @@ curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --pat
 
 if [ ! -f "$TMP_JULIAUP_BINDIR/juliaup" ]; then error "temporary juliaup installation failed."; fi
 
-info_end "$INFO_MSG" 
+info "... done: temporary installation completed."
 
 
 # Create preferences for HPC key packages that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl, HDF5.jl, ADIOS2.jl, ...)
 
-INFO_MSG="Creating preferences for HPC key packages"
-info_start "$INFO_MSG"
+info "Creating preferences for HPC key packages..."
 
 export JULIA_PREFDIR="$JUHPC_SETUP_INSTALLDIR/julia_preferences"
 export JULIA_PREF_PROJECT="$JULIA_PREFDIR/Project.toml"
+export JULIA_PREFS="$JULIA_PREFDIR/LocalPreferences.toml"
 mkdir -p "$JULIA_PREFDIR" || { error "failed to create directory: $JULIA_PREFDIR"; }
 
 if [[ -n "${JUHPC_CUDA_HOME}" || -n "${JUHPC_ROCM_HOME}" ]]; then
@@ -174,12 +163,14 @@ if [ -n "${JUHPC_HDF5_HOME}" ]; then
     julia --project="$JULIA_PREFDIR" -e 'using HDF5; HDF5.API.set_libraries!("$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5.so", "$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5_hl.so")'
 fi
 
-info_end "$INFO_MSG"
+if [ ! -s "$JULIA_PREFS" ]; then error "preferences file is missing or empty."; fi
+
+info "... done: preferences created."
 
 
 # Create a wrapper for juliaup that installs juliaup (and latest julia) on scratch if it is not already installed
 
-info_start "Creating wrapper for juliaup"
+info "Creating wrapper for juliaup..."
 
 export JULIAUP_WRAPPER_BINDIR="$JUHPC_SETUP_INSTALLDIR/juliaup_wrapper"
 export JULIAUP_WRAPPER="$JULIAUP_WRAPPER_BINDIR/juliaup"
@@ -207,14 +198,14 @@ JULIAUP_EXE="$(ENV["JULIAUP_BINDIR"])/juliaup"
 
 if [ ! -f "\$JULIAUP_EXE" ]; then
     print_logo
-    info "This is the first call to juliaup; juliaup and the latest julia will now be installed. After that, you can use juliaup and julia normally. Installing in $(ENV["JULIAUP_INSTALLDIR"])..."
-    sleep 3
+    info "This is the first call to juliaup: installing juliaup and the latest julia..."
+    sleep 2
     PATH_OLD="\$PATH"
     export PATH=\$(echo \$PATH | perl -pe "s|[^:]*juliaup(?:_wrapper)?[^:]*:?||g") # Remove all juliaup paths from PATH
     curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path="$(ENV["JULIAUP_INSTALLDIR"])" --background-selfupdate 0 --startup-selfupdate 0 || { echo "Failed to install Juliaup (and Julia)." >&2; exit 1; }
     export PATH="\$PATH_OLD"
     if [ ! -f "\$JULIAUP_EXE" ]; then error "juliaup installation failed."; fi
-    info "... done. Installation of juliaup and the latest julia in $(ENV["JULIAUP_INSTALLDIR"]) completed. You can use juliaup and julia normally."
+    info "... done: installation completed (location: $(ENV["JULIAUP_INSTALLDIR"])). You can now use juliaup and julia normally."
 else
     "\$JULIAUP_EXE" \$@
 fi
@@ -229,7 +220,7 @@ info "... done."
 
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
 
-info_start "Creating activate script"
+info "Creating activate script..."
 
 export JULIAUP_DEPOT="$JULIAUP_INSTALLDIR/depot"
 export JULIA_DEPOT="$JULIAUP_INSTALLDIR/depot"
@@ -273,16 +264,15 @@ info "... done."
 # Optionally execute a site-specific post installation julia script (if passed a third argument)
 
 if [ -n "${JUHPC_POST_INSTALL_JL}" ]; then
-    INFO_MSG="Executing site-specific post installation julia script (using the project where preferences were set)"
-    info_start "$INFO_MSG"
+    info "Executing site-specific post-installation julia script (using the project where preferences were set)..."
     julia --project="$JULIA_PREFDIR" "$JUHPC_POST_INSTALL_JL"
-    info_end "$INFO_MSG"
+    info "... done: post-installation script completed."
 fi
 
 
 # Remove temporary juliaup installation and Manifest.toml in the preferences directory
 
 cleanup
-rm -f "$JULIA_PREFDIR/Manifest.toml"
+mv "$JULIA_PREFDIR/Manifest.toml" "$JULIA_PREFDIR/Manifest.toml.bak" || { error "failed to move Manifest.toml in $JULIA_PREFDIR"; }
 
-info "... Installation of HPC setup for juliaup, julia and HPC key packages requiring system libraries is complete.\n\n"
+info "... The installation of the HPC setup for juliaup, julia and HPC key packages is complete.\n\n"
