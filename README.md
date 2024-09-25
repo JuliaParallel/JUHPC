@@ -105,7 +105,7 @@ export JUHPC_HDF5_HOME=$HDF5_DIR
 # Call JUHPC
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/../julia/${HOSTNAME%%-*}/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"
-VERSION="v0.1.1"
+VERSION="v0.2.0"
 wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
 bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
 ```
@@ -135,7 +135,7 @@ export JUHPC_ADIOS2_HOME=$(spack -C $ENV_MOUNT/config location -i adios2)
 JUHPC_SETUP_INSTALLDIR=$ENV_MOUNT/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"
 JUHPC_POST_INSTALL_JL=$ENV_EXTRA/uenv_view.jl
-VERSION="v0.1.1"
+VERSION="v0.2.0"
 wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
 bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR $JUHPC_POST_INSTALL_JL
 ```
@@ -194,7 +194,7 @@ MPICH_GPU_SUPPORT_ENABLED=1 srun -Acsstaff -C'gpu' -N2 -n2 julia cudaaware.jl
 uenv start --view=julia julia
 
 # Call Juliaup to install Juliaup and latest Julia on scratch
-Juliaup
+juliaup
 
 # Call Juliaup to see its options
 juliaup
