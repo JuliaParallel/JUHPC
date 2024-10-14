@@ -12,8 +12,10 @@ Concretely, JUHPC creates an HPC setup for Juliaup, Julia and some HPC key packa
 - a wrapper for Juliaup that will install Juliaup (and latest Julia) automatically in a predefined location (e.g., scratch) when the end user calls `juliaup` the first time;
 - an activation script that sets environment variables for Juliaup, Julia and HPC key packages;
 - optional execution of a site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
+  
+JUHPC allows, furthermore, to create *multiple fully independent HPC setups that do not interfere with each other* (notably, `.bashrc` and `.profile` are not modified). Thus, it is, e.g., straightforward to create a Julia[up] HPC setup per architecture (in the examples below this is achieved based on the hostname).
 
-HPC sites can install the HPC setup into a folder in a location accessible to all users (which can also be part, e.g., of a uenv). HPC end users can install the HPC setup into any folder to their liking, accessible from the compute nodes; it is then enough to source the activate script in this folder in order to activate the HPC setup.
+HPC sites can install the HPC setup(s) into a folder in a location accessible to all users (which can also be part, e.g., of a uenv). HPC end users can install the HPC setup(s) into any folder to their liking, accessible from the compute nodes; it is then enough to source the activate script in this folder in order to activate the HPC setup.
 
 
 ## Table of contents <!-- omit from toc -->
@@ -75,7 +77,7 @@ I.e., it takes the following arguments:
 > The above examples assume that `$SCRATCH/../julia` is a wipe out protected folder on scratch.
 
 > [!IMPORTANT]
-> Separate installation by `HOSTNAME` is required if different hosts with different architectures share file system used for installation (e.g., daint and eiger on ALPS).
+> Separate installation by `HOSTNAME` is required if different hosts with different architectures share the file system used for installation (e.g., daint and eiger on ALPS).
 
 
 ## Examples: HPC setup installations on the ALPS supercomputer (CSCS)
