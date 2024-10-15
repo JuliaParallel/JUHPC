@@ -59,6 +59,11 @@ check_dir() {
     done
 }
 
+julia_pref() {
+  local cmd="$1"
+  julia --project="$JULIA_PREFDIR" -e "$cmd" >> "$TMP_JULIAUP_LOG" 2>&1
+}
+
 
 # Assign passed arguments to environment variables
 
@@ -121,48 +126,48 @@ export JULIA_PREFS="$JULIA_PREFDIR/LocalPreferences.toml"
 mkdir -p "$JULIA_PREFDIR" || { error "failed to create directory: $JULIA_PREFDIR"; }
 
 if [[ -n "${JUHPC_CUDA_HOME}" || -n "${JUHPC_ROCM_HOME}" ]]; then
-    julia --project="$JULIA_PREFDIR" -e 'using Pkg; Pkg.add("Preferences")' >> $TMP_JULIAUP_LOG
+    julia_pref 'using Pkg; Pkg.add("Preferences")'
     echo "[extras]" >> "$JULIA_PREF_PROJECT"
 fi
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set preference for using the local CUDA runtime before any installation of CUDA.jl to avoid downloading of artifacts
     echo 'CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"' >> "$JULIA_PREF_PROJECT"
     
-    julia --project="$JULIA_PREFDIR" -e 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)' >> $TMP_JULIAUP_LOG
+    julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)'
     if [ -n "${JUHPC_CUDA_RUNTIME_VERSION}" ]; then
-        julia --project="$JULIA_PREFDIR" -e 'using Preferences; set_preferences!("CUDA_Runtime_jll", "version"=>join(split(ENV["JUHPC_CUDA_RUNTIME_VERSION"],".")[1:2],"."))' >> $TMP_JULIAUP_LOG
+        julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "version"=>join(split(ENV["JUHPC_CUDA_RUNTIME_VERSION"],".")[1:2],"."))'
     fi
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime before any installation of AMDGPU.jl to avoid downloading of artifacts
     echo 'AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"' >> "$JULIA_PREF_PROJECT"
 
-    julia --project="$JULIA_PREFDIR" -e 'using Preferences; set_preferences!("AMDGPU", "use_artifacts"=>false, "eager_gc"=>false)' >> $TMP_JULIAUP_LOG
+    julia_pref 'using Preferences; set_preferences!("AMDGPU", "use_artifacts"=>false, "eager_gc"=>false)'
 fi
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then export CUDA_HOME="$JUHPC_CUDA_HOME"; fi
 if [ -n "${JUHPC_ROCM_HOME}" ]; then export ROCM_PATH="$JUHPC_ROCM_HOME"; fi
 
-julia --project="$JULIA_PREFDIR" -e 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])' >> $TMP_JULIAUP_LOG
+julia_pref 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])'
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set  preference for using the local CUDA runtime in a more stable way (in case the previous would not be valid anymore)
-    julia --project="$JULIA_PREFDIR" -e 'using CUDA; CUDA.set_runtime_version!((VersionNumber(join(split(ENV[key],".")[1:2],".")) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)' >> $TMP_JULIAUP_LOG
+    julia_pref 'using CUDA; CUDA.set_runtime_version!((VersionNumber(join(split(ENV[key],".")[1:2],".")) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)'
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime in a more stable way (in case the previous would not be valid anymore)
-    julia --project="$JULIA_PREFDIR" -e 'using AMDGPU; AMDGPU.ROCmDiscovery.use_artifacts!(false)' >> $TMP_JULIAUP_LOG
+    julia_pref 'using AMDGPU; AMDGPU.ROCmDiscovery.use_artifacts!(false)'
 fi
 
 if [ -n "${JUHPC_MPI_VENDOR}" ]; then
     check_var "JUHPC_MPI_EXEC"
-    julia --project="$JULIA_PREFDIR" -e 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), vendor=ENV["JUHPC_MPI_VENDOR"])' >> $TMP_JULIAUP_LOG
+    julia_pref 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), vendor=ENV["JUHPC_MPI_VENDOR"])'
 elif [ -n "${JUHPC_MPI_HOME}" ]; then
     check_var "JUHPC_MPI_EXEC"
-    julia --project="$JULIA_PREFDIR" -e 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), extra_paths=["$(ENV["JUHPC_MPI_HOME"])/lib"])' >> $TMP_JULIAUP_LOG
+    julia_pref 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), extra_paths=["$(ENV["JUHPC_MPI_HOME"])/lib"])'
 fi
 
 if [ -n "${JUHPC_HDF5_HOME}" ]; then
-    julia --project="$JULIA_PREFDIR" -e 'using HDF5; HDF5.API.set_libraries!("$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5.so", "$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5_hl.so")' >> $TMP_JULIAUP_LOG
+    julia_pref 'using HDF5; HDF5.API.set_libraries!("$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5.so", "$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5_hl.so")'
 fi
 
 if [ ! -s "$JULIA_PREFS" ]; then error "preferences file is missing or empty."; fi
