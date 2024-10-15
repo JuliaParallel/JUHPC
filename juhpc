@@ -79,6 +79,7 @@ else
     error "Neither /dev/shm nor /tmp directories exist. Cannot set TMP environment variable."
 fi
 
+mkdir -p "$TMP" || { error "failed to create directory: $TMP"; }
 export TMP_JULIAUP_ROOTDIR="$TMP/juliaup"
 
 
@@ -95,7 +96,7 @@ check_dir "$JUHPC_SETUP_INSTALLDIR"
 info "Installing juliaup and julia temporarily in $TMP_JULIAUP_ROOTDIR..."
 
 export TMP_JULIAUP_BINDIR="$TMP_JULIAUP_ROOTDIR/bin" # juliaup and julia binaries
-export TMP_JULIAUP_LOG="$TMP_JULIAUP_ROOTDIR/tmpjuliaup.log"
+export TMP_JULIAUP_LOG="$TMP/tmpjuliaup.log"
 export JULIAUP_DEPOT_PATH="$TMP_JULIAUP_ROOTDIR/depot"
 export JULIA_DEPOT_PATH="$TMP_JULIAUP_ROOTDIR/depot"
 export JULIA_PROJECT="$JULIA_DEPOT_PATH/environments/latest"
