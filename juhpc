@@ -145,6 +145,10 @@ check_var "JULIAUP_INSTALLDIR" "JUHPC_SETUP_INSTALLDIR"
 check_dir "$JUHPC_SETUP_INSTALLDIR"
 mkdir -p "$JUHPC_SETUP_INSTALLDIR" || { error "failed to create directory: $JUHPC_SETUP_INSTALLDIR"; }
 
+if [[ "$JULIAUP_INSTALLDIR" == "$JUHPC_SETUP_INSTALLDIR" ]]; then
+    error "JULIAUP_INSTALLDIR and JUHPC_SETUP_INSTALLDIR cannot have the same value."
+fi
+
 
 # Download and install julia in /tmp using juliaup
 
