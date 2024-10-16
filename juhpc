@@ -8,7 +8,7 @@
 # - optionally executing a site-specific post installation julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 
-# Define info, error, cleanup and check functions
+# Define info, error, cleanup, check functions and julia call for setting preferences
 
 export JUHPC="\e[1;34m[\e[0m \e[1;35mJ\e[0m\e[1;32mU\e[0m\e[1;31mH\e[0m\e[1;31mP\e[0m\e[1;31mC\e[0m\e[1;34m:\e[0m"
 
@@ -28,7 +28,11 @@ print_logo() {
 
 info() {
     local message="$1"
-    echo -e "$JUHPC $message" >&2
+    local verbosity="${2:-0}"  # Default to 0 if not provided
+    if [[ "$JUHPC_VERBOSE" -ge "$verbosity" ]]; then 
+        echo -e "$JUHPC $message" >&2
+    fi
+    echo -e "$JUHPC $message" >> "$TMP_JULIAUP_LOG"
 }
 
 cleanup() {
@@ -61,7 +65,11 @@ check_dir() {
 
 julia_pref() {
   local cmd="$1"
-  julia --project="$JULIA_PREFDIR" -e "$cmd" >> "$TMP_JULIAUP_LOG" 2>&1
+  if [[ "$JUHPC_VERBOSE" -gt 1 ]]; then
+    julia --project="$JULIA_PREFDIR" -e "$cmd" 2>&1 | tee -a "$TMP_JULIAUP_LOG"
+  else
+    julia --project="$JULIA_PREFDIR" -e "$cmd" >> "$TMP_JULIAUP_LOG" 2>&1
+  fi
 }
 
 
@@ -70,6 +78,15 @@ julia_pref() {
 export JUHPC_SETUP_INSTALLDIR="$1"
 export JULIAUP_INSTALLDIR="$2"
 export JUHPC_POST_INSTALL_JL="$3"
+
+
+# Check/set environment variable defining verbosity of output
+
+if [[ -z "$JUHPC_VERBOSE" ]]; then
+    export JUHPC_VERBOSE=0
+elif ! [[ "$JUHPC_VERBOSE" =~ ^[0-2]$ ]]; then
+    error "JUHPC_VERBOSE must be between 0 and 2."
+fi
 
 
 # Set (derived) general environment variables
@@ -173,6 +190,8 @@ fi
 
 if [ ! -s "$JULIA_PREFS" ]; then error "preferences file is missing or empty."; fi
 
+info "Preferences:\n$(cat "$JULIA_PREFS")" 1
+
 info "... done: preferences created."
 
 
@@ -223,7 +242,7 @@ fi
 if [ ! -s "$JULIAUP_WRAPPER" ]; then error "Juliaup wrapper is missing or empty."; fi
 chmod +x "$JULIAUP_WRAPPER"
 
-info "... done."
+info "... done: wrapper created."
 
 
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
@@ -266,7 +285,9 @@ $(haskey(ENV,"JUHPC_ADIOS2_HOME") && ENV["JUHPC_ADIOS2_HOME"] != "" ? """
 
 if [ ! -s "$ACTIVATE_SCRIPT" ]; then error "Activate script is missing or empty."; fi
 
-info "... done."
+info "Environment variables:\n$(grep '^export ' "$ACTIVATE_SCRIPT")" 1
+
+info "... done: activate script created."
 
 
 # Optionally execute a site-specific post installation julia script (if passed a third argument)
