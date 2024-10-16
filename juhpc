@@ -32,7 +32,7 @@ info() {
     if [[ "$JUHPC_VERBOSE" -ge "$verbose_min" ]]; then 
         echo -e "$JUHPC $message" >&2
     fi
-    echo -e "$JUHPC $message" >> "$TMP_JULIAUP_LOG"
+    echo -e "$JUHPC $message" >> "$JUHPC_SETUP_INSTALLLOG"
 }
 
 cleanup() {
@@ -66,9 +66,9 @@ check_dir() {
 julia_pref() {
   local cmd="$1"
   if [[ "$JUHPC_VERBOSE" -gt 1 ]]; then
-    julia --project="$JULIA_PREFDIR" -e "$cmd" 2>&1 | tee -a "$TMP_JULIAUP_LOG"
+    julia --project="$JULIA_PREFDIR" -e "$cmd" 2>&1 | tee -a "$JUHPC_SETUP_INSTALLLOG"
   else
-    julia --project="$JULIA_PREFDIR" -e "$cmd" >> "$TMP_JULIAUP_LOG" 2>&1
+    julia --project="$JULIA_PREFDIR" -e "$cmd" >> "$JUHPC_SETUP_INSTALLLOG" 2>&1
   fi
 }
 
@@ -80,7 +80,9 @@ export JULIAUP_INSTALLDIR="$2"
 export JUHPC_POST_INSTALL_JL="$3"
 
 
-# Check/set environment variable defining verbosity of output
+# Check/set environment variables for logging and defining verbosity of output
+
+export JUHPC_SETUP_INSTALLLOG="$JUHPC_SETUP_INSTALLDIR/setup_install.log" # Need to be defined at the very beginning
 
 if [[ -z "$JUHPC_VERBOSE" ]]; then
     export JUHPC_VERBOSE=0
@@ -119,7 +121,6 @@ mkdir -p "$JUHPC_SETUP_INSTALLDIR" || { error "failed to create directory: $JUHP
 info "Installing juliaup and julia temporarily in $TMP_JULIAUP_ROOTDIR..."
 
 export TMP_JULIAUP_BINDIR="$TMP_JULIAUP_ROOTDIR/bin" # juliaup and julia binaries
-export TMP_JULIAUP_LOG="$JUHPC_SETUP_INSTALLDIR/setup_install.log"
 export JULIAUP_DEPOT_PATH="$TMP_JULIAUP_ROOTDIR/depot"
 export JULIA_DEPOT_PATH="$TMP_JULIAUP_ROOTDIR/depot"
 export JULIA_PROJECT="$JULIA_DEPOT_PATH/environments/latest"
@@ -127,7 +128,7 @@ export PATH=$(echo $PATH | perl -pe "s|[^:]*julia(?:up)?[^:]*:?||g") # Remove al
 export PATH=$TMP_JULIAUP_BINDIR:$PATH
 
 check_dir "$TMP_JULIAUP_ROOTDIR"
-curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path="$TMP_JULIAUP_ROOTDIR" --background-selfupdate 0 --startup-selfupdate 0 > $TMP_JULIAUP_LOG || { error "failed to install Juliaup (and Julia) in $TMP_JULIAUP_ROOTDIR."; }
+curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path="$TMP_JULIAUP_ROOTDIR" --background-selfupdate 0 --startup-selfupdate 0 > $JUHPC_SETUP_INSTALLLOG || { error "failed to install Juliaup (and Julia) in $TMP_JULIAUP_ROOTDIR."; }
 
 if [ ! -f "$TMP_JULIAUP_BINDIR/juliaup" ]; then error "temporary juliaup installation failed."; fi
 
