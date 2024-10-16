@@ -79,6 +79,9 @@ I.e., it takes the following arguments:
 > [!IMPORTANT]
 > Separate installation by `HOSTNAME` is required if different hosts with different architectures share the file system used for installation (e.g., daint and eiger on ALPS).
 
+> [!TIP]
+> Export `JUHPC_VERBOSE=1` or `JUHPC_VERBOSE=2` to increase the verbosity of the output during the HPC setup installation: if set to `1`, the generated preferences and environment variables are printed; if set to `2`, all the output of all commands is printed in addition (default verbosity is `0`). No matter which verbosity level is set, all output is written in to a log file (`"$JUHPC_SETUP_INSTALLDIR/setup_install.log"`).
+
 
 ## Examples: HPC setup installations on the ALPS supercomputer (CSCS)
 
