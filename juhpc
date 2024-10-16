@@ -28,8 +28,8 @@ print_logo() {
 
 info() {
     local message="$1"
-    local verbosity="${2:-0}"  # Default to 0 if not provided
-    if [[ "$JUHPC_VERBOSE" -ge "$verbosity" ]]; then 
+    local verbose_min="${2:-0}"  # Default to 0 if not provided
+    if [[ "$JUHPC_VERBOSE" -ge "$verbose_min" ]]; then 
         echo -e "$JUHPC $message" >&2
     fi
     echo -e "$JUHPC $message" >> "$TMP_JULIAUP_LOG"
