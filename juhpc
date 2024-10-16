@@ -94,6 +94,7 @@ print_logo
 info "Starting installation of HPC setup for juliaup, julia and HPC key packages requiring system libraries..."
 check_var "JULIAUP_INSTALLDIR" "JUHPC_SETUP_INSTALLDIR"
 check_dir "$JUHPC_SETUP_INSTALLDIR"
+mkdir -p "$JUHPC_SETUP_INSTALLDIR" || { error "failed to create directory: $JUHPC_SETUP_INSTALLDIR"; }
 
 
 # Download and install julia in /tmp using juliaup
@@ -101,7 +102,7 @@ check_dir "$JUHPC_SETUP_INSTALLDIR"
 info "Installing juliaup and julia temporarily in $TMP_JULIAUP_ROOTDIR..."
 
 export TMP_JULIAUP_BINDIR="$TMP_JULIAUP_ROOTDIR/bin" # juliaup and julia binaries
-export TMP_JULIAUP_LOG="$TMP/tmpjuliaup.log"
+export TMP_JULIAUP_LOG="$JUHPC_SETUP_INSTALLDIR/setup_install.log"
 export JULIAUP_DEPOT_PATH="$TMP_JULIAUP_ROOTDIR/depot"
 export JULIA_DEPOT_PATH="$TMP_JULIAUP_ROOTDIR/depot"
 export JULIA_PROJECT="$JULIA_DEPOT_PATH/environments/latest"
