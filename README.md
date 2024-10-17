@@ -60,7 +60,7 @@ Details are given in the following two subsections.
   - `JUHPC_ADIOS2_HOME`: Activates HPC setup for ADIOS2 and is used to set ADIOS2.jl preferences.
 
 > [!NOTE]
-> The automatically defined preferences suitable for typical HPC needs can be modified with a post install Julia script (see `JUHPC_POST_INSTALL_JL` in next section). Also preferences for other packages could be added this way if needed. Of course, any of these preferences can later be overwritten by local preferences.
+> The automatically defined preferences suitable for typical HPC needs can be modified with a post install Julia script (see keyword argument `--postinstall` in next section). Also preferences for other packages could be added this way if needed. Of course, any of these preferences can later be overwritten by local preferences.
 
 ### 2. Call JUHPC
 
@@ -142,7 +142,7 @@ JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"
 JUHPC_POST_INSTALL_JL=$ENV_EXTRA/uenv_view.jl
 VERSION="v0.2.0"
 wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
-bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR $JUHPC_POST_INSTALL_JL
+bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --postinstall=$JUHPC_POST_INSTALL_JL --verbose=1
 ```
 
 ### Test of example 1
