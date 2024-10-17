@@ -60,24 +60,27 @@ Details are given in the following two subsections.
   - `JUHPC_ADIOS2_HOME`: Activates HPC setup for ADIOS2 and is used to set ADIOS2.jl preferences.
 
 > [!NOTE]
-> The automatically defined preferences suitable for typical HPC needs can be modified with a post install Julia script (see `JUHPC_POST_INSTALL_JL` in next section). Also preferences for other packages could be added this way if needed. Of course, any of these preferences can later be overwritten by local preferences.
+> The automatically defined preferences suitable for typical HPC needs can be modified with a post install Julia script (see keyword argument `--postinstall` in next section). Also preferences for other packages could be added this way if needed. Of course, any of these preferences can later be overwritten by local preferences.
 
 ### 2. Call JUHPC
 
 The `juhpc` bash script is called as follows:
 ```bash
-juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR [$JUHPC_POST_INSTALL_JL]
+juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR [--postinstall=<julia-script>] [--verbose=<value>]
 ```
-I.e., it takes the following arguments:
+I.e., it takes the following positional arguments:
 - `JUHPC_SETUP_INSTALLDIR`: the folder into which the HPC setup is installed, e.g., `"$SCRATCH/../julia/${HOSTNAME%%-*}/juhpc_setup"`.
 - `JULIAUP_INSTALLDIR`: the folder into which Juliaup and Julia will automatically be installed the first time the end user calls `juliaup`. *User environment variables should be escaped* in order not to have them expanded during HPC setup installation, but during its usage by the end user, e.g., `"\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"`.
-- `JUHPC_POST_INSTALL_JL` (optional): site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 > [!NOTE]
 > The above examples assume that `$SCRATCH/../julia` is a wipe out protected folder on scratch.
 
 > [!IMPORTANT]
 > Separate installation by `HOSTNAME` is required if different hosts with different architectures share the file system used for installation (e.g., daint and eiger on ALPS).
+
+Furthermore, it supports the following keyword argument:
+- `--postinstall=<julia-script>`: site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
+- `--verbose=<value>`: verbosity of the output during the HPC setup installation: if set to `1`, the generated HPC package preferences and environment variables are printed; if set to `2`, all the output of all commands is printed in addition for debugging purposes (default verbosity is `0`). No matter which verbosity level is set, all output is written in to a log file (`"$JUHPC_SETUP_INSTALLDIR/hpc_setup_install.log"`).
 
 
 ## Examples: HPC setup installations on the ALPS supercomputer (CSCS)
@@ -139,7 +142,7 @@ JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"
 JUHPC_POST_INSTALL_JL=$ENV_EXTRA/uenv_view.jl
 VERSION="v0.2.0"
 wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
-bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR $JUHPC_POST_INSTALL_JL
+bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --postinstall=$JUHPC_POST_INSTALL_JL --verbose=1
 ```
 
 ### Test of example 1
