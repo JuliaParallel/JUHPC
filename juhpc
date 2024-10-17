@@ -191,38 +191,39 @@ export JULIA_PREFS="$JULIA_PREFDIR/LocalPreferences.toml"
 mkdir -p "$JULIA_PREFDIR" || { error "failed to create directory: $JULIA_PREFDIR"; }
 
 progress_bar 1 # Initialize progress bar.
+julia_pref 'using Pkg' 10 # Initialize project.
 
 if [[ -n "${JUHPC_CUDA_HOME}" || -n "${JUHPC_ROCM_HOME}" ]]; then
-    julia_pref 'using Pkg; Pkg.add("Preferences")' 5
+    julia_pref 'using Pkg; Pkg.add("Preferences")' 30
     echo "[extras]" >> "$JULIA_PREF_PROJECT"
 fi
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set preference for using the local CUDA runtime before any installation of CUDA.jl to avoid downloading of artifacts
     echo 'CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"' >> "$JULIA_PREF_PROJECT"
     
-    julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)' 10
+    julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)' 35
     if [ -n "${JUHPC_CUDA_RUNTIME_VERSION}" ]; then
-        julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "version"=>join(split(ENV["JUHPC_CUDA_RUNTIME_VERSION"],".")[1:2],"."))'
+        julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "version"=>join(split(ENV["JUHPC_CUDA_RUNTIME_VERSION"],".")[1:2],"."))' 40
     fi
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime before any installation of AMDGPU.jl to avoid downloading of artifacts
     echo 'AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"' >> "$JULIA_PREF_PROJECT"
 
-    julia_pref 'using Preferences; set_preferences!("AMDGPU", "use_artifacts"=>false, "eager_gc"=>false)' 15
+    julia_pref 'using Preferences; set_preferences!("AMDGPU", "use_artifacts"=>false, "eager_gc"=>false)' 45
 fi
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then export CUDA_HOME="$JUHPC_CUDA_HOME"; fi
 if [ -n "${JUHPC_ROCM_HOME}" ]; then export ROCM_PATH="$JUHPC_ROCM_HOME"; fi
 
-julia_pref 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])' 50
+julia_pref 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])' 70
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set  preference for using the local CUDA runtime in a more stable way (in case the previous would not be valid anymore)
-    julia_pref 'using CUDA; CUDA.set_runtime_version!((VersionNumber(join(split(ENV[key],".")[1:2],".")) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)' 60
+    julia_pref 'using CUDA; CUDA.set_runtime_version!((VersionNumber(join(split(ENV[key],".")[1:2],".")) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)' 80
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime in a more stable way (in case the previous would not be valid anymore)
-    julia_pref 'using AMDGPU; AMDGPU.ROCmDiscovery.use_artifacts!(false)' 70
+    julia_pref 'using AMDGPU; AMDGPU.ROCmDiscovery.use_artifacts!(false)' 85
 fi
 
 if [ -n "${JUHPC_MPI_VENDOR}" ]; then
