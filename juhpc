@@ -8,7 +8,9 @@
 # - optionally executing a site-specific post installation julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 
-# Define info, error, cleanup, check functions and julia call for setting preferences
+# Define log, info, error, cleanup, check functions and julia call for setting preferences
+
+export JUHPC_SETUP_INSTALLLOG="./hpc_setup_install.log" # must be defined at the very beginning
 
 export JUHPC="\e[1;34m[\e[0m \e[1;35mJ\e[0m\e[1;32mU\e[0m\e[1;31mH\e[0m\e[1;31mP\e[0m\e[1;31mC\e[0m\e[1;34m:\e[0m"
 
@@ -103,20 +105,35 @@ progress_bar() {
 }
 
 
-# Assign passed arguments to environment variables
+# Assign positional arguments and set default values for keyword arguments
 
 export JUHPC_SETUP_INSTALLDIR="$1"
 export JULIAUP_INSTALLDIR="$2"
-export JUHPC_POST_INSTALL_JL="$3"
+export JUHPC_POST_INSTALL_JL=""
+export JUHPC_VERBOSE=0
 
 
-# Check/set environment variables for logging and defining verbosity of output
+# Check positional arguments
 
-export JUHPC_SETUP_INSTALLLOG="$JUHPC_SETUP_INSTALLDIR/setup_install.log" # Need to be defined at the very beginning
+check_var "JUHPC_SETUP_INSTALLDIR" "JULIAUP_INSTALLDIR"
+if [[ "$JULIAUP_INSTALLDIR" == "$JUHPC_SETUP_INSTALLDIR" ]]; then
+    error "JULIAUP_INSTALLDIR and JUHPC_SETUP_INSTALLDIR cannot have the same value."
+fi
+check_dir "$JUHPC_SETUP_INSTALLDIR"
 
-if [[ -z "$JUHPC_VERBOSE" ]]; then
-    export JUHPC_VERBOSE=0
-elif ! [[ "$JUHPC_VERBOSE" =~ ^[0-2]$ ]]; then
+
+# Parse and check the keyword arguments
+
+shift 2
+for arg in "$@"; do
+  case $arg in
+    postinstall=*) export JUHPC_POST_INSTALL_JL="${arg#*=}" ;;
+    verbose=*) export JUHPC_VERBOSE="${arg#*=}" ;;
+    *) error "Unknown argument: $arg" ;;
+  esac
+done
+
+if ! [[ "$JUHPC_VERBOSE" =~ ^[0-2]$ ]]; then
     error "JUHPC_VERBOSE must be between 0 and 2."
 fi
 
@@ -133,7 +150,6 @@ else
     error "Neither /dev/shm nor /tmp directories exist. Cannot set TMP environment variable."
 fi
 
-mkdir -p "$TMP" || { error "failed to create directory: $TMP"; }
 export TMP_JULIAUP_ROOTDIR="$TMP/juliaup"
 
 
@@ -141,13 +157,9 @@ export TMP_JULIAUP_ROOTDIR="$TMP/juliaup"
 
 print_logo
 info "Starting installation of HPC setup for juliaup, julia and HPC key packages requiring system libraries..."
-check_var "JULIAUP_INSTALLDIR" "JUHPC_SETUP_INSTALLDIR"
-check_dir "$JUHPC_SETUP_INSTALLDIR"
-mkdir -p "$JUHPC_SETUP_INSTALLDIR" || { error "failed to create directory: $JUHPC_SETUP_INSTALLDIR"; }
 
-if [[ "$JULIAUP_INSTALLDIR" == "$JUHPC_SETUP_INSTALLDIR" ]]; then
-    error "JULIAUP_INSTALLDIR and JUHPC_SETUP_INSTALLDIR cannot have the same value."
-fi
+mkdir -p "$TMP" || { error "failed to create directory: $TMP"; }
+mkdir -p "$JUHPC_SETUP_INSTALLDIR" || { error "failed to create directory: $JUHPC_SETUP_INSTALLDIR"; }
 
 
 # Download and install julia in /tmp using juliaup
@@ -333,9 +345,7 @@ info "... done: activate script created."
 
 if [ -n "${JUHPC_POST_INSTALL_JL}" ]; then
     info "Executing site-specific post-installation julia script (using the project where preferences were set)..."
-    progress_bar 1 # Initialize progress bar.
-    julia --project="$JULIA_PREFDIR" "$JUHPC_POST_INSTALL_JL"
-    progress_bar 100 # Finalize progress bar.
+    julia --project="$JULIA_PREFDIR" "$JUHPC_POST_INSTALL_JL" 2>&1 | tee -a "$JUHPC_SETUP_INSTALLLOG"
     info "... done: post-installation script completed."
 fi
 
@@ -344,5 +354,6 @@ fi
 
 cleanup
 mv "$JULIA_PREFDIR/Manifest.toml" "$JULIA_PREFDIR/Manifest.toml.bak" || { error "failed to move Manifest.toml in $JULIA_PREFDIR"; }
+mv "$JUHPC_SETUP_INSTALLLOG" "$JUHPC_SETUP_INSTALLDIR/" || { error "failed to move $JUHPC_SETUP_INSTALLLOG to $JUHPC_SETUP_INSTALLDIR"; }
 
 info "... The installation of the HPC setup for juliaup, julia and HPC key packages is complete.\n\n"
