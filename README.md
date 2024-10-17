@@ -66,12 +66,11 @@ Details are given in the following two subsections.
 
 The `juhpc` bash script is called as follows:
 ```bash
-juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR [$JUHPC_POST_INSTALL_JL]
+juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR [--postinstall=<julia-script>] [--verbose=<value>]
 ```
-I.e., it takes the following arguments:
+I.e., it takes the following positional arguments:
 - `JUHPC_SETUP_INSTALLDIR`: the folder into which the HPC setup is installed, e.g., `"$SCRATCH/../julia/${HOSTNAME%%-*}/juhpc_setup"`.
 - `JULIAUP_INSTALLDIR`: the folder into which Juliaup and Julia will automatically be installed the first time the end user calls `juliaup`. *User environment variables should be escaped* in order not to have them expanded during HPC setup installation, but during its usage by the end user, e.g., `"\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"`.
-- `JUHPC_POST_INSTALL_JL` (optional): site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 > [!NOTE]
 > The above examples assume that `$SCRATCH/../julia` is a wipe out protected folder on scratch.
@@ -79,8 +78,9 @@ I.e., it takes the following arguments:
 > [!IMPORTANT]
 > Separate installation by `HOSTNAME` is required if different hosts with different architectures share the file system used for installation (e.g., daint and eiger on ALPS).
 
-> [!TIP]
-> Export `JUHPC_VERBOSE=1` or `JUHPC_VERBOSE=2` to increase the verbosity of the output during the HPC setup installation: if set to `1`, the generated preferences and environment variables are printed; if set to `2`, all the output of all commands is printed in addition (default verbosity is `0`). No matter which verbosity level is set, all output is written in to a log file (`"$JUHPC_SETUP_INSTALLDIR/setup_install.log"`).
+Furthermore, it supports the following keyword argument:
+- `--postinstall=<julia-script>`: site-specific post installation Julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
+- `--verbose=<value>`: verbosity of the output during the HPC setup installation: if set to `1`, the generated HPC package preferences and environment variables are printed; if set to `2`, all the output of all commands is printed in addition for debugging purposes (default verbosity is `0`). No matter which verbosity level is set, all output is written in to a log file (`"$JUHPC_SETUP_INSTALLDIR/hpc_setup_install.log"`).
 
 
 ## Examples: HPC setup installations on the ALPS supercomputer (CSCS)
