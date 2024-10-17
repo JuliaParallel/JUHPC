@@ -127,8 +127,8 @@ check_dir "$JUHPC_SETUP_INSTALLDIR"
 shift 2
 for arg in "$@"; do
   case $arg in
-    postinstall=*) export JUHPC_POST_INSTALL_JL="${arg#*=}" ;;
-    verbose=*) export JUHPC_VERBOSE="${arg#*=}" ;;
+    --postinstall=*) export JUHPC_POST_INSTALL_JL="${arg#*=}" ;;
+    --verbose=*) export JUHPC_VERBOSE="${arg#*=}" ;;
     *) error "Unknown argument: $arg" ;;
   esac
 done
