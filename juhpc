@@ -101,6 +101,7 @@ progress_bar() {
             bar+="░"
         done   
         printf '\r|%s| %s%%' "$bar" "$percent_var"
+        if [[ "$progress" -eq 100 ]]; then echo ''; fi
     fi
 }
 
@@ -183,7 +184,7 @@ info "... done: temporary installation completed."
 
 # Create preferences for HPC key packages that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl, HDF5.jl, ADIOS2.jl, ...)
 
-info "Creating preferences for HPC key packages..."
+info "Creating preferences for HPC key packages (this can take a few minutes, because some packages have to be temporarily installed)..."
 
 export JULIA_PREFDIR="$JUHPC_SETUP_INSTALLDIR/julia_preferences"
 export JULIA_PREF_PROJECT="$JULIA_PREFDIR/Project.toml"
