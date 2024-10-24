@@ -194,10 +194,8 @@ mkdir -p "$JULIA_PREFDIR" || { error "failed to create directory: $JULIA_PREFDIR
 progress_bar 1 # Initialize progress bar.
 julia_pref 'using Pkg' 10 # Initialize project.
 
-if [[ -n "${JUHPC_CUDA_HOME}" || -n "${JUHPC_ROCM_HOME}" ]]; then
-    julia_pref 'using Pkg; Pkg.add("Preferences")' 30
-    echo "[extras]" >> "$JULIA_PREF_PROJECT"
-fi
+julia_pref 'using Pkg; Pkg.add("Preferences")' 30 # Add Preferences package in any case to avoid that it has to be installed in postinstall scripts that only want to set preferences.
+echo "[extras]" >> "$JULIA_PREF_PROJECT"
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set preference for using the local CUDA runtime before any installation of CUDA.jl to avoid downloading of artifacts
     echo 'CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"' >> "$JULIA_PREF_PROJECT"
