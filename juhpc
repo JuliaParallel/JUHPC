@@ -8,7 +8,9 @@
 # - optionally executing a site-specific post installation julia script, using the project where preferences were set (e.g, to modify preferences or to create an uenv view equivalent to the activation script).
 
 
-# Define info, error, cleanup and check functions
+# Define log, info, error, cleanup, check functions and julia call for setting preferences
+
+export JUHPC_SETUP_INSTALLLOG="./hpc_setup_install.log" # must be defined at the very beginning
 
 export JUHPC="\e[1;34m[\e[0m \e[1;35mJ\e[0m\e[1;32mU\e[0m\e[1;31mH\e[0m\e[1;31mP\e[0m\e[1;31mC\e[0m\e[1;34m:\e[0m"
 
@@ -28,7 +30,11 @@ print_logo() {
 
 info() {
     local message="$1"
-    echo -e "$JUHPC $message" >&2
+    local verbose_min="${2:-0}"  # Default to 0 if not provided
+    if [[ "$JUHPC_VERBOSE" -ge "$verbose_min" ]]; then 
+        echo -e "$JUHPC $message" >&2
+    fi
+    echo -e "$JUHPC $message" >> "$JUHPC_SETUP_INSTALLLOG"
 }
 
 cleanup() {
@@ -59,12 +65,78 @@ check_dir() {
     done
 }
 
+julia_pref() {
+  local cmd="$1"
+  local progress="${2:-}"  # The second argument is optional, default to an empty string if not provided
 
-# Assign passed arguments to environment variables
+  if [[ "$JUHPC_VERBOSE" -gt 1 ]]; then
+    julia --project="$JULIA_PREFDIR" -e "$cmd" 2>&1 | tee -a "$JUHPC_SETUP_INSTALLLOG"
+  else
+    julia --project="$JULIA_PREFDIR" -e "$cmd" >> "$JUHPC_SETUP_INSTALLLOG" 2>&1
+  fi
+
+  if [[ -n "$progress" ]]; then
+    progress_bar "$progress"
+  fi
+}
+
+percent() {
+    local p=00$(($1*100000/$2))
+    printf -v "$3" %.2f ${p::-3}.${p: -3}
+}
+
+progress_bar() {
+    local progress=$1
+    local width=${2:-50}  # Default to a width of 50 if not provided
+    local percent_var
+    percent "$progress" 100 percent_var  # Always assume total is 100
+    local filled_length=$((width * progress / 100))
+    local bar=""
+
+    if [[ "$JUHPC_VERBOSE" -lt 2 ]]; then
+        for ((i=0; i<filled_length; i++)); do
+            bar+="█"
+        done
+        for ((i=filled_length; i<width; i++)); do
+            bar+="░"
+        done   
+        printf '\r|%s| %s%%' "$bar" "$percent_var"
+        if [[ "$progress" -eq 100 ]]; then echo ''; fi
+    fi
+}
+
+
+# Assign positional arguments and set default values for keyword arguments
 
 export JUHPC_SETUP_INSTALLDIR="$1"
 export JULIAUP_INSTALLDIR="$2"
-export JUHPC_POST_INSTALL_JL="$3"
+export JUHPC_POST_INSTALL_JL=""
+export JUHPC_VERBOSE=0
+
+
+# Check positional arguments
+
+check_var "JUHPC_SETUP_INSTALLDIR" "JULIAUP_INSTALLDIR"
+if [[ "$JULIAUP_INSTALLDIR" == "$JUHPC_SETUP_INSTALLDIR" ]]; then
+    error "JULIAUP_INSTALLDIR and JUHPC_SETUP_INSTALLDIR cannot have the same value."
+fi
+check_dir "$JUHPC_SETUP_INSTALLDIR"
+
+
+# Parse and check the keyword arguments
+
+shift 2
+for arg in "$@"; do
+  case $arg in
+    --postinstall=*) export JUHPC_POST_INSTALL_JL="${arg#*=}" ;;
+    --verbose=*) export JUHPC_VERBOSE="${arg#*=}" ;;
+    *) error "Unknown argument: $arg" ;;
+  esac
+done
+
+if ! [[ "$JUHPC_VERBOSE" =~ ^[0-2]$ ]]; then
+    error "JUHPC_VERBOSE must be between 0 and 2."
+fi
 
 
 # Set (derived) general environment variables
@@ -86,8 +158,9 @@ export TMP_JULIAUP_ROOTDIR="$TMP/juliaup"
 
 print_logo
 info "Starting installation of HPC setup for juliaup, julia and HPC key packages requiring system libraries..."
-check_var "JULIAUP_INSTALLDIR" "JUHPC_SETUP_INSTALLDIR"
-check_dir "$JUHPC_SETUP_INSTALLDIR"
+
+mkdir -p "$TMP" || { error "failed to create directory: $TMP"; }
+mkdir -p "$JUHPC_SETUP_INSTALLDIR" || { error "failed to create directory: $JUHPC_SETUP_INSTALLDIR"; }
 
 
 # Download and install julia in /tmp using juliaup
@@ -102,7 +175,7 @@ export PATH=$(echo $PATH | perl -pe "s|[^:]*julia(?:up)?[^:]*:?||g") # Remove al
 export PATH=$TMP_JULIAUP_BINDIR:$PATH
 
 check_dir "$TMP_JULIAUP_ROOTDIR"
-curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path="$TMP_JULIAUP_ROOTDIR" --background-selfupdate 0 --startup-selfupdate 0  || { error "failed to install Juliaup (and Julia) in $TMP_JULIAUP_ROOTDIR."; }
+curl -fsSL https://install.julialang.org | sh -s -- --add-to-path=no --yes --path="$TMP_JULIAUP_ROOTDIR" --background-selfupdate 0 --startup-selfupdate 0 > $JUHPC_SETUP_INSTALLLOG || { error "failed to install Juliaup (and Julia) in $TMP_JULIAUP_ROOTDIR."; }
 
 if [ ! -f "$TMP_JULIAUP_BINDIR/juliaup" ]; then error "temporary juliaup installation failed."; fi
 
@@ -111,59 +184,66 @@ info "... done: temporary installation completed."
 
 # Create preferences for HPC key packages that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl, HDF5.jl, ADIOS2.jl, ...)
 
-info "Creating preferences for HPC key packages..."
+info "Creating preferences for HPC key packages (this can take a few minutes, because some packages have to be temporarily installed)..."
 
 export JULIA_PREFDIR="$JUHPC_SETUP_INSTALLDIR/julia_preferences"
 export JULIA_PREF_PROJECT="$JULIA_PREFDIR/Project.toml"
 export JULIA_PREFS="$JULIA_PREFDIR/LocalPreferences.toml"
 mkdir -p "$JULIA_PREFDIR" || { error "failed to create directory: $JULIA_PREFDIR"; }
 
+progress_bar 1 # Initialize progress bar.
+julia_pref 'using Pkg' 10 # Initialize project.
+
 if [[ -n "${JUHPC_CUDA_HOME}" || -n "${JUHPC_ROCM_HOME}" ]]; then
-    julia --project="$JULIA_PREFDIR" -e 'using Pkg; Pkg.add("Preferences")'
+    julia_pref 'using Pkg; Pkg.add("Preferences")' 30
     echo "[extras]" >> "$JULIA_PREF_PROJECT"
 fi
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set preference for using the local CUDA runtime before any installation of CUDA.jl to avoid downloading of artifacts
     echo 'CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"' >> "$JULIA_PREF_PROJECT"
     
-    julia --project="$JULIA_PREFDIR" -e 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)'
+    julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "local"=>true)' 35
     if [ -n "${JUHPC_CUDA_RUNTIME_VERSION}" ]; then
-        julia --project="$JULIA_PREFDIR" -e 'using Preferences; set_preferences!("CUDA_Runtime_jll", "version"=>join(split(ENV["JUHPC_CUDA_RUNTIME_VERSION"],".")[1:2],"."))'
+        julia_pref 'using Preferences; set_preferences!("CUDA_Runtime_jll", "version"=>join(split(ENV["JUHPC_CUDA_RUNTIME_VERSION"],".")[1:2],"."))' 40
     fi
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime before any installation of AMDGPU.jl to avoid downloading of artifacts
     echo 'AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"' >> "$JULIA_PREF_PROJECT"
 
-    julia --project="$JULIA_PREFDIR" -e 'using Preferences; set_preferences!("AMDGPU", "use_artifacts"=>false, "eager_gc"=>false)'
+    julia_pref 'using Preferences; set_preferences!("AMDGPU", "use_artifacts"=>false, "eager_gc"=>false)' 45
 fi
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then export CUDA_HOME="$JUHPC_CUDA_HOME"; fi
 if [ -n "${JUHPC_ROCM_HOME}" ]; then export ROCM_PATH="$JUHPC_ROCM_HOME"; fi
 
-julia --project="$JULIA_PREFDIR" -e 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])'
+julia_pref 'using Pkg; Pkg.add([p for (p,l) in [("MPIPreferences", "JUHPC_MPI_VENDOR"), ("MPIPreferences", "JUHPC_MPI_HOME"), ("CUDA", "JUHPC_CUDA_HOME"), ("AMDGPU", "JUHPC_ROCM_HOME"), ("HDF5", "JUHPC_HDF5_HOME")] if haskey(ENV,l) && ENV[l]!=""])' 70
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then  # Set  preference for using the local CUDA runtime in a more stable way (in case the previous would not be valid anymore)
-    julia --project="$JULIA_PREFDIR" -e 'using CUDA; CUDA.set_runtime_version!((VersionNumber(join(split(ENV[key],".")[1:2],".")) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)'
+    julia_pref 'using CUDA; CUDA.set_runtime_version!((VersionNumber(join(split(ENV[key],".")[1:2],".")) for key in ["JUHPC_CUDA_RUNTIME_VERSION"] if haskey(ENV,key) && ENV[key]!=="")...; local_toolkit=true)' 80
 fi
 
 if [ -n "${JUHPC_ROCM_HOME}" ]; then  # Set preference for using the local ROCm runtime in a more stable way (in case the previous would not be valid anymore)
-    julia --project="$JULIA_PREFDIR" -e 'using AMDGPU; AMDGPU.ROCmDiscovery.use_artifacts!(false)'
+    julia_pref 'using AMDGPU; AMDGPU.ROCmDiscovery.use_artifacts!(false)' 85
 fi
 
 if [ -n "${JUHPC_MPI_VENDOR}" ]; then
     check_var "JUHPC_MPI_EXEC"
-    julia --project="$JULIA_PREFDIR" -e 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), vendor=ENV["JUHPC_MPI_VENDOR"])'
+    julia_pref 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), vendor=ENV["JUHPC_MPI_VENDOR"])' 90
 elif [ -n "${JUHPC_MPI_HOME}" ]; then
     check_var "JUHPC_MPI_EXEC"
-    julia --project="$JULIA_PREFDIR" -e 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), extra_paths=["$(ENV["JUHPC_MPI_HOME"])/lib"])'
+    julia_pref 'using MPIPreferences; MPIPreferences.use_system_binary(mpiexec=split(ENV["JUHPC_MPI_EXEC"]), extra_paths=["$(ENV["JUHPC_MPI_HOME"])/lib"])' 90
 fi
 
 if [ -n "${JUHPC_HDF5_HOME}" ]; then
-    julia --project="$JULIA_PREFDIR" -e 'using HDF5; HDF5.API.set_libraries!("$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5.so", "$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5_hl.so")'
+    julia_pref 'using HDF5; HDF5.API.set_libraries!("$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5.so", "$(ENV["JUHPC_HDF5_HOME"])/lib/libhdf5_hl.so")'
 fi
 
 if [ ! -s "$JULIA_PREFS" ]; then error "preferences file is missing or empty."; fi
+
+progress_bar 100 # Finalize progress bar.
+
+info "Preferences:\n$(cat "$JULIA_PREFS")" 1
 
 info "... done: preferences created."
 
@@ -215,7 +295,7 @@ fi
 if [ ! -s "$JULIAUP_WRAPPER" ]; then error "Juliaup wrapper is missing or empty."; fi
 chmod +x "$JULIAUP_WRAPPER"
 
-info "... done."
+info "... done: wrapper created."
 
 
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
@@ -258,14 +338,16 @@ $(haskey(ENV,"JUHPC_ADIOS2_HOME") && ENV["JUHPC_ADIOS2_HOME"] != "" ? """
 
 if [ ! -s "$ACTIVATE_SCRIPT" ]; then error "Activate script is missing or empty."; fi
 
-info "... done."
+info "Environment variables:\n$(grep '^export ' "$ACTIVATE_SCRIPT")" 1
+
+info "... done: activate script created."
 
 
 # Optionally execute a site-specific post installation julia script (if passed a third argument)
 
 if [ -n "${JUHPC_POST_INSTALL_JL}" ]; then
     info "Executing site-specific post-installation julia script (using the project where preferences were set)..."
-    julia --project="$JULIA_PREFDIR" "$JUHPC_POST_INSTALL_JL"
+    julia --project="$JULIA_PREFDIR" "$JUHPC_POST_INSTALL_JL" 2>&1 | tee -a "$JUHPC_SETUP_INSTALLLOG"
     info "... done: post-installation script completed."
 fi
 
@@ -274,5 +356,6 @@ fi
 
 cleanup
 mv "$JULIA_PREFDIR/Manifest.toml" "$JULIA_PREFDIR/Manifest.toml.bak" || { error "failed to move Manifest.toml in $JULIA_PREFDIR"; }
+mv "$JUHPC_SETUP_INSTALLLOG" "$JUHPC_SETUP_INSTALLDIR/" || { error "failed to move $JUHPC_SETUP_INSTALLLOG to $JUHPC_SETUP_INSTALLDIR"; }
 
 info "... The installation of the HPC setup for juliaup, julia and HPC key packages is complete.\n\n"
