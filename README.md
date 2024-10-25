@@ -111,8 +111,8 @@ export JUHPC_HDF5_HOME=$HDF5_DIR
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/../julia/${HOSTNAME%%-*}/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"
 VERSION="v0.2.0"
-wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
-bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
+wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O ./juhpc
+bash -l ./juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR
 ```
 
 > [!TIP]
@@ -141,8 +141,8 @@ JUHPC_SETUP_INSTALLDIR=$ENV_MOUNT/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%-*}/juliaup"
 JUHPC_POST_INSTALL_JL=$ENV_EXTRA/uenv_view.jl
 VERSION="v0.2.0"
-wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
-bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --postinstall=$JUHPC_POST_INSTALL_JL --verbose=1
+wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O ./juhpc
+bash -l ./juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --postinstall=$JUHPC_POST_INSTALL_JL --verbose=1
 ```
 
 ### Test of example 1

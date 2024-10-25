@@ -336,7 +336,7 @@ $(haskey(ENV,"JUHPC_ADIOS2_HOME") && ENV["JUHPC_ADIOS2_HOME"] != "" ? """
 
 if [ ! -s "$ACTIVATE_SCRIPT" ]; then error "Activate script is missing or empty."; fi
 
-info "Environment variables:\n$(grep '^export ' "$ACTIVATE_SCRIPT")" 1
+info "Environment variables in activate script:\n$(grep '^export ' "$ACTIVATE_SCRIPT")" 1
 
 info "... done: activate script created."
 

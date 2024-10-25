@@ -37,5 +37,5 @@ echo 'using Preferences
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/../julia/${HOSTNAME%%[0-9]*}-gpu/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/../julia/\$USER/\${HOSTNAME%%[0-9]*}-gpu/juliaup"
 VERSION="v0.3.0"
-wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O /tmp/juhpc
-bash -l /tmp/juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --postinstall=$JUHPC_POST_INSTALL_JL
+wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O ./juhpc
+bash -l ./juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --postinstall=$JUHPC_POST_INSTALL_JL
