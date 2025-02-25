@@ -303,7 +303,8 @@ info "... done: wrapper created."
 info "Creating activate script..."
 
 export JULIAUP_DEPOT="$JULIAUP_INSTALLDIR/depot"
-export JULIA_DEPOT="$JULIAUP_INSTALLDIR/depot"
+# Added default $HOME/.julia path for backwards compatibility with exisitng Julia user installs
+export JULIA_DEPOT="$JULIAUP_INSTALLDIR/depot:$HOME/.julia"
 export ACTIVATE_SCRIPT="$JUHPC_SETUP_INSTALLDIR/activate"
 
 julia -e 'println("""
