@@ -143,7 +143,9 @@ fi
 
 export JULIAUP_BINDIR="$JULIAUP_INSTALLDIR/bin" # juliaup and julia binaries
 
-if [ -d "/dev/shm" ]; then
+if [ ! -z "$NCAR_HOST"]; then
+	export TMP="$SCRATCH/tmp"
+elif [ -d "/dev/shm" ]; then
     export TMP="/dev/shm/$USER"
 elif [ -d "/tmp" ]; then
     export TMP="/tmp/$USER"
