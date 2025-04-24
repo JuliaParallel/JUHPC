@@ -296,6 +296,48 @@ chmod +x "$JULIAUP_WRAPPER"
 info "... done: wrapper created."
 
 
+# Create an opt-in wrapper for julia that calls the juliaup wrapper to install juliaup and latest julia on scratch if it is not already installed
+
+info "Creating opt-in wrapper for julia..."
+
+export JULIA_WRAPPER_BINDIR="$JUHPC_SETUP_INSTALLDIR/julia_wrapper"
+export JULIA_WRAPPER="$JULIA_WRAPPER_BINDIR/julia"
+mkdir -p "$JULIA_WRAPPER_BINDIR" || { error "failed to create directory: $JULIA_WRAPPER_BINDIR"; }
+
+julia -e '
+println("""#!/bin/bash
+
+print_logo() {
+  echo -e "\n\n$(ENV["JUHPC_LOGO"])\n\n" >&2
+}
+
+info() {
+    local message="\$1"
+    echo -e "$(ENV["JUHPC"]) \$message" >&2
+}
+
+error() {
+    local message="\$1"
+    info "\e[1;31mERROR:\e[0m \$message"
+    exit 1
+}
+
+if ! which julia >/dev/null 2>&1; then
+    print_logo
+    info "Julia is not yet installed, calling juliaup to install it..."
+    "$(ENV["JULIAUP_WRAPPER"])" || error "juliaup failed to install Julia."
+fi
+
+exec julia "\$@"
+""")
+' > "$JULIA_WRAPPER"
+
+if [ ! -s "$JULIA_WRAPPER" ]; then error "julia wrapper is missing or empty."; fi
+chmod +x "$JULIA_WRAPPER"
+
+info "... done: wrapper created."
+
+
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
 
 info "Creating activate script..."
