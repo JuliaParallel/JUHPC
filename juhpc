@@ -338,6 +338,45 @@ chmod +x "$JULIA_WRAPPER"
 info "... done: wrapper created."
 
 
+# Create an opt-in IJulia installer that installs also the basic Julia kernel; furthermore, it can install further kernels in function of the JUHPC environment variables.
+
+info "Creating an opt-in IJulia installer..."
+
+export IJULIA_INSTALLER_DIR="$JUHPC_SETUP_INSTALLDIR/ijulia_installer"
+export IJULIA_INSTALLER="$IJULIA_INSTALLER_DIR/install_ijulia"
+mkdir -p "$IJULIA_INSTALLER_DIR" || { error "failed to create directory: $IJULIA_INSTALLER_DIR"; }
+
+
+julia -e '
+println("""#!/bin/bash
+
+"$(ENV["JULIA_WRAPPER"])" -e "
+using Pkg
+Pkg.add(\"IJulia\")
+using IJulia
+installkernel(\"Julia\")
+"
+""")
+' > "$IJULIA_INSTALLER"
+
+if [ -n "${JUHPC_CUDA_HOME}" ]; then
+  julia -e 'println("""
+if which nsys >/dev/null 2>&1; then
+  "$(ENV["JULIA_WRAPPER"])" -e "
+using IJulia
+installkernel(\"Julia under Nsight Systems\"; julia = \`nsys launch julia -i --color=yes --project=@.\`)
+"
+fi
+""")
+  ' >> "$IJULIA_INSTALLER"
+fi
+
+if [ ! -s "$IJULIA_INSTALLER" ]; then error "IJulia installer is missing or empty."; fi
+chmod +x "$IJULIA_INSTALLER"
+
+info "... done: installer created."
+
+
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
 
 info "Creating activate script..."
