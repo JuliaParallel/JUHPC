@@ -342,9 +342,9 @@ info "... done: wrapper created."
 
 info "Creating an opt-in IJulia installer..."
 
-export IJULIA_INSTALLER_DIR="$JUHPC_SETUP_INSTALLDIR/ijulia_installer"
-export IJULIA_INSTALLER="$IJULIA_INSTALLER_DIR/install_ijulia"
-mkdir -p "$IJULIA_INSTALLER_DIR" || { error "failed to create directory: $IJULIA_INSTALLER_DIR"; }
+export IJULIA_INSTALLER_BINDIR="$JUHPC_SETUP_INSTALLDIR/ijulia_installer"
+export IJULIA_INSTALLER="$IJULIA_INSTALLER_BINDIR/install_ijulia"
+mkdir -p "$IJULIA_INSTALLER_BINDIR" || { error "failed to create directory: $IJULIA_INSTALLER_BINDIR"; }
 
 
 julia -e '
