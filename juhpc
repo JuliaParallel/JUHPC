@@ -285,7 +285,7 @@ if [ ! -f "\$JULIAUP_EXE" ]; then
     if [ ! -f "\$JULIAUP_EXE" ]; then error "juliaup installation failed."; fi
     info "... done: installation completed (location: $(ENV["JULIAUP_INSTALLDIR"])). You can now use juliaup and julia normally."
 else
-    "\$JULIAUP_EXE" \$@
+    exec "\$JULIAUP_EXE" "\$@"
 fi
 """)
 ' > "$JULIAUP_WRAPPER"
@@ -325,7 +325,7 @@ if [ ! -f "\$JULIA_EXE" ]; then
     "$(ENV["JULIAUP_WRAPPER"])" || error "juliaup failed to install julia."
 fi
 
-exec julia "\$@"
+exec "\$JULIA_EXE" "\$@"
 """)
 ' > "$JULIA_WRAPPER"
 
@@ -358,12 +358,10 @@ installkernel(\"Julia\")
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then
   julia -e 'println("""
-if which nsys >/dev/null 2>&1; then
-  "$(ENV["JULIA_WRAPPER"])" -e "
+"$(ENV["JULIA_WRAPPER"])" -e "
 using IJulia
-installkernel(\"Julia under Nsight Systems\"; julia = \`nsys launch julia -i --color=yes --project=@.\`)
+installkernel(\"Julia under Nsight Systems\"; julia = \`$(ENV[\"JUHPC_CUDA_HOME\"])/bin/nsys launch julia -i --color=yes --project=@.\`)
 "
-fi
 """)
   ' >> "$IJULIA_INSTALLER"
 fi
