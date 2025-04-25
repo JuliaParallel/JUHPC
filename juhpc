@@ -307,10 +307,6 @@ mkdir -p "$JULIA_WRAPPER_BINDIR" || { error "failed to create directory: $JULIA_
 julia -e '
 println("""#!/bin/bash
 
-print_logo() {
-  echo -e "\n\n$(ENV["JUHPC_LOGO"])\n\n" >&2
-}
-
 info() {
     local message="\$1"
     echo -e "$(ENV["JUHPC"]) \$message" >&2
@@ -325,9 +321,8 @@ error() {
 JULIA_EXE="$(ENV["JULIAUP_BINDIR"])/julia"
 
 if [ ! -f "\$JULIA_EXE" ]; then
-    print_logo
     info "Julia is not yet installed, calling juliaup to install it..."
-    "$(ENV["JULIAUP_WRAPPER"])" || error "juliaup failed to install Julia."
+    "$(ENV["JULIAUP_WRAPPER"])" || error "juliaup failed to install julia."
 fi
 
 exec julia "\$@"
