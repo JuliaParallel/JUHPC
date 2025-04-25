@@ -347,21 +347,30 @@ mkdir -p "$IJULIA_INSTALLER_BINDIR" || { error "failed to create directory: $IJU
 julia -e '
 println("""#!/bin/bash
 
+info() {
+    local message="\$1"
+    echo -e "$(ENV["JUHPC"]) \$message" >&2
+}
+
+info "Installing IJulia and the basic Julia kernel..."
 "$(ENV["JULIA_WRAPPER"])" -e '\''
 using Pkg
 Pkg.add("IJulia")
 using IJulia
 installkernel("Julia")
 '\''
+info "... done: installation completed.
 """)
 ' > "$IJULIA_INSTALLER"
 
 if [ -n "${JUHPC_CUDA_HOME}" ]; then
   julia -e 'println("""
+info "Installing a kernel for Julia under Nsight Systems..."
 "$(ENV["JULIA_WRAPPER"])" -e '\''
 using IJulia
 installkernel("Julia under Nsight Systems"; julia = \`$(ENV["JUHPC_CUDA_HOME"])/bin/nsys launch julia -i --color=yes --project=@.\`)
 '\''
+info "... done: installation completed.
 """)
   ' >> "$IJULIA_INSTALLER"
 fi
