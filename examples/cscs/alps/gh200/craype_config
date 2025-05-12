@@ -26,6 +26,6 @@ export JUHPC_HDF5_HOME=$HDF5_DIR
 # Call JUHPC
 JUHPC_SETUP_INSTALLDIR=$SCRATCH/${HOSTNAME%%-*}/juhpc_setup
 JULIAUP_INSTALLDIR="\$SCRATCH/\${HOSTNAME%%-*}/juliaup"
-VERSION="v0.3.0"
+VERSION="v0.4.0"
 wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O ./juhpc
 bash -l ./juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --verbose=1
