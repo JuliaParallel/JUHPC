@@ -369,7 +369,6 @@ info "Installing a kernel for Julia under Nsight Systems..."
 "$(ENV["JULIA_WRAPPER"])" -e '\''
 using IJulia
 installkernel("Julia under Nsight Systems"; julia = \`$(ENV["JUHPC_CUDA_HOME"])/bin/nsys launch --trace=cuda julia -i --color=yes --project=@.\`)
-installkernel("Julia under Nsight Compute"; julia = \`$(ENV["JUHPC_CUDA_HOME"])/bin/ncu --mode=launch julia -i --color=yes --project=@.\`)
 '\''
 info "... done: installation completed."
 """)
