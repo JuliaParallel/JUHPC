@@ -285,7 +285,7 @@ if [ ! -f "\$JULIAUP_EXE" ]; then
     if [ ! -f "\$JULIAUP_EXE" ]; then error "juliaup installation failed."; fi
     info "... done: installation completed (location: $(ENV["JULIAUP_INSTALLDIR"])). You can now use juliaup and julia normally."
 else
-    "\$JULIAUP_EXE" \$@
+    exec "\$JULIAUP_EXE" "\$@"
 fi
 """)
 ' > "$JULIAUP_WRAPPER"
@@ -294,6 +294,91 @@ if [ ! -s "$JULIAUP_WRAPPER" ]; then error "Juliaup wrapper is missing or empty.
 chmod +x "$JULIAUP_WRAPPER"
 
 info "... done: wrapper created."
+
+
+# Create an opt-in wrapper for julia that calls the juliaup wrapper to install juliaup and latest julia on scratch if it is not already installed
+
+info "Creating opt-in wrapper for julia..."
+
+export JULIA_WRAPPER_BINDIR="$JUHPC_SETUP_INSTALLDIR/julia_wrapper"
+export JULIA_WRAPPER="$JULIA_WRAPPER_BINDIR/julia"
+mkdir -p "$JULIA_WRAPPER_BINDIR" || { error "failed to create directory: $JULIA_WRAPPER_BINDIR"; }
+
+julia -e '
+println("""#!/bin/bash
+
+info() {
+    local message="\$1"
+    echo -e "$(ENV["JUHPC"]) \$message" >&2
+}
+
+error() {
+    local message="\$1"
+    info "\e[1;31mERROR:\e[0m \$message"
+    exit 1
+}
+
+JULIA_EXE="$(ENV["JULIAUP_BINDIR"])/julia"
+
+if [ ! -f "\$JULIA_EXE" ]; then
+    info "Julia is not yet installed, calling juliaup to install it..."
+    "$(ENV["JULIAUP_WRAPPER"])" || error "juliaup failed to install julia."
+fi
+
+exec "\$JULIA_EXE" "\$@"
+""")
+' > "$JULIA_WRAPPER"
+
+if [ ! -s "$JULIA_WRAPPER" ]; then error "julia wrapper is missing or empty."; fi
+chmod +x "$JULIA_WRAPPER"
+
+info "... done: wrapper created."
+
+
+# Create an opt-in IJulia installer that installs also the basic Julia kernel; furthermore, it can install further kernels in function of the JUHPC environment variables.
+
+info "Creating an opt-in IJulia installer..."
+
+export IJULIA_INSTALLER_BINDIR="$JUHPC_SETUP_INSTALLDIR/ijulia_installer"
+export IJULIA_INSTALLER="$IJULIA_INSTALLER_BINDIR/install_ijulia"
+mkdir -p "$IJULIA_INSTALLER_BINDIR" || { error "failed to create directory: $IJULIA_INSTALLER_BINDIR"; }
+
+
+julia -e '
+println("""#!/bin/bash
+
+info() {
+    local message="\$1"
+    echo -e "$(ENV["JUHPC"]) \$message" >&2
+}
+
+info "Installing IJulia and the basic Julia kernel..."
+"$(ENV["JULIA_WRAPPER"])" -e '\''
+using Pkg
+Pkg.add("IJulia")
+using IJulia
+installkernel("Julia")
+'\''
+info "... done: installation completed."
+""")
+' > "$IJULIA_INSTALLER"
+
+if [ -n "${JUHPC_CUDA_HOME}" ]; then
+  julia -e 'println("""
+info "Installing a kernel for Julia under Nsight Systems..."
+"$(ENV["JULIA_WRAPPER"])" -e '\''
+using IJulia
+installkernel("Julia under Nsight Systems"; julia = \`$(ENV["JUHPC_CUDA_HOME"])/bin/nsys launch --trace=cuda julia -i --color=yes --project=@.\`)
+'\''
+info "... done: installation completed."
+""")
+  ' >> "$IJULIA_INSTALLER"
+fi
+
+if [ ! -s "$IJULIA_INSTALLER" ]; then error "IJulia installer is missing or empty."; fi
+chmod +x "$IJULIA_INSTALLER"
+
+info "... done: installer created."
 
 
 # Create an activation script that sets environment variables for juliaup, julia and HPC key packages
