@@ -143,7 +143,9 @@ fi
 
 export JULIAUP_BINDIR="$JULIAUP_INSTALLDIR/bin" # juliaup and julia binaries
 
-if [ -d "/dev/shm" ]; then
+if [ ! -z "$NCAR_HOST"]; then
+	export TMP="$SCRATCH/tmp"
+elif [ -d "/dev/shm" ]; then
     export TMP="/dev/shm/$USER"
 elif [ -d "/tmp" ]; then
     export TMP="/tmp/$USER"
@@ -386,7 +388,8 @@ info "... done: installer created."
 info "Creating activate script..."
 
 export JULIAUP_DEPOT="$JULIAUP_INSTALLDIR/depot"
-export JULIA_DEPOT="$JULIAUP_INSTALLDIR/depot"
+# Added default $HOME/.julia path for backwards compatibility with exisitng Julia user installs
+export JULIA_DEPOT="$JULIAUP_INSTALLDIR/depot:$HOME/.julia"
 export ACTIVATE_SCRIPT="$JUHPC_SETUP_INSTALLDIR/activate"
 
 julia -e 'println("""

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Author: Daniel Howard, NSF NCAR (dhoward)
+
+# Load required modules (including correct CPU and GPU target modules)
+ml ncarenv/24.12
+ml reset
+ml gcc/12.4.0
+ml cuda/12.3.2
+ml swap hdf5 hdf5-mpi/1.12.3 
+module list
+
+# Environment variables for HPC key packages that require system libraries that require system libraries (MPI.jl, CUDA.jl, AMDGPU.jl, HDF5.jl and ADIOS2.jl)
+export JUHPC_CUDA_HOME=$CUDA_HOME
+export JUHPC_CUDA_RUNTIME_VERSION=$CRAY_CUDATOOLKIT_VERSION
+export JUHPC_MPI_VENDOR="cray"
+export JUHPC_MPI_EXEC="mpiexec"
+export JUHPC_HDF5_HOME=$NCAR_ROOT_HDF5
+
+# Call JUHPC
+JUHPC_SETUP_INSTALLDIR=/glade/u/apps/opt/julia/$NCAR_HOST/juhpc_setup
+JULIAUP_INSTALLDIR="/glade/work/\$USER/julia/\$NCAR_HOST/juliaup"
+VERSION="v0.3.0"
+#wget https://raw.githubusercontent.com/JuliaParallel/JUHPC/$VERSION/juhpc -O ./juhpc
+./juhpc $JUHPC_SETUP_INSTALLDIR $JULIAUP_INSTALLDIR --verbose=2 | tee juhpc_install.log
